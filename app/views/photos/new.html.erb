@@ -1,0 +1,36 @@
+<h1>Enhance Your Home's Landscape</h1>
+
+<p>Upload a photo of your home and we'll show you an enhanced landscape design.</p>
+
+<% if flash[:alert] %>
+  <div class="alert alert-danger">
+    <%= flash[:alert] %>
+  </div>
+<% end %>
+
+<%= form_with(model: @photo, local: true, html: { class: "photo-upload-form" }) do |form| %>
+  <% if @photo.errors.any? %>
+    <div class="error-messages">
+      <h2><%= pluralize(@photo.errors.count, "error") %> prevented this photo from being saved:</h2>
+      <ul>
+        <% @photo.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :original_image, "Upload a photo of your home" %>
+    <%= form.file_field :original_image, accept: "image/png,image/jpeg,image/jpg", required: true %>
+    <small>Supported formats: JPG, JPEG, PNG</small>
+  </div>
+
+  <div class="actions">
+    <%= form.submit "Upload & Enhance", class: "btn btn-primary" %>
+  </div>
+<% end %>
+
+<div class="back-link">
+  <%= link_to "Back to Home", root_path %>
+</div>

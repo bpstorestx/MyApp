@@ -1,0 +1,56 @@
+<h1>Your Enhanced Landscape</h1>
+
+<% if flash[:notice] %>
+  <div class="alert alert-success">
+    <%= flash[:notice] %>
+  </div>
+<% end %>
+
+<div class="photo-display">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h3>Original Photo</h3>
+        </div>
+        <div class="card-body">
+          <% if @photo.original_image.attached? %>
+            <%= image_tag @photo.original_image, class: "img-fluid" %>
+          <% else %>
+            <p class="text-muted">No original image attached</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h3>Enhanced Landscape</h3>
+          <span class="status-badge <%= @photo.status %>">
+            Status: <%= @photo.status.titleize %>
+          </span>
+        </div>
+        <div class="card-body">
+          <% if @photo.status == "completed" && @photo.ai_image_url.present? %>
+            <img src="<%= @photo.ai_image_url %>" alt="Enhanced landscape" class="img-fluid">
+          <% elsif @photo.status == "processing" %>
+            <div class="processing-indicator">
+              <p>Your enhanced landscape is being generated...</p>
+              <div class="spinner"></div>
+            </div>
+          <% elsif @photo.status == "failed" %>
+            <p class="text-danger">We encountered an error while generating your enhanced landscape.</p>
+          <% else %>
+            <p class="text-muted">Enhanced image will appear here once processing is complete.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="actions mt-4">
+  <%= link_to "Upload Another Photo", new_photo_path, class: "btn btn-primary" %>
+  <%= link_to "Back to Home", root_path, class: "btn btn-secondary" %>
+</div>
