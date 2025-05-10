@@ -11,19 +11,16 @@ class LandscapePromptBuilder
     # Update status to show processing has begun
     photo.update!(status: "processing")
     
-    # In a real implementation, this would call OpenAI or another service
-    # For now, we're using a dummy placeholder as specified in the requirements
-    dummy_url = if Rails.env.production? && ENV["OPENAI_API_KEY"].present? && !ENV["USE_DUMMY_IMAGES"]
-      # Ready for when you want to use the real API
-      # generate_ai_image
-      generate_dummy_image_url # Still using dummy for now
+    # Use the actual OpenAI API if key is present, fallback to dummy if not
+    if ENV["OPENAI_API_KEY"].present?
+      ai_image_url = generate_ai_image
     else
-      generate_dummy_image_url
+      ai_image_url = generate_dummy_image_url
     end
     
-    # Update the photo with the "enhanced" image URL
+    # Update the photo with the generated image URL
     photo.update!(
-      ai_image_url: dummy_url,
+      ai_image_url: ai_image_url,
       status: "completed"
     )
     
@@ -68,30 +65,29 @@ class LandscapePromptBuilder
     "https://placehold.co/#{width}x#{height}"
   end
   
-  # Ready to implement when you want to use the real API
   def generate_ai_image
-    # This is where you would make the actual API call to OpenAI
-    # The code is commented out as it's for future implementation
-    
-    # 1. Create a prompt based on the photo and design templates
+    # Build the prompt for image generation
     prompt = build_prompt
     
-    # 2. Call OpenAI API to generate the image
-    # response = @client.images.generate(
-    #   parameters: {
-    #     prompt: prompt,
-    #     model: "dall-e-3",
-    #     size: "1024x1024",
-    #     quality: "standard",
-    #     n: 1
-    #   }
-    # )
-    
-    # 3. Extract and return the image URL from the response
-    # response.dig("data", 0, "url")
-    
-    # For now, return dummy URL until this is implemented
-    generate_dummy_image_url
+    begin
+      # Call OpenAI API to generate the image
+      response = @client.images.generate(
+        parameters: {
+          prompt: prompt,
+          model: "dall-e-3", # Use DALL-E 3 for higher quality
+          size: "1024x1024",
+          quality: "standard",
+          n: 1
+        }
+      )
+      
+      # Extract and return the image URL from the response
+      response.dig("data", 0, "url")
+    rescue => e
+      # Log the error and fallback to dummy image
+      Rails.logger.error("OpenAI API Error: #{e.message}")
+      generate_dummy_image_url
+    end
   end
   
   def build_prompt
