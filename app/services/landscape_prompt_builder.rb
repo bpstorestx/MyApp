@@ -11,10 +11,10 @@ class LandscapePromptBuilder
     # Update status to show processing has begun
     photo.update!(status: "processing")
     
-    # Use the actual OpenAI API if key is present, fallback to dummy if not
+    # Use the OpenAI API if key is present, fallback to dummy if not
     if ENV["OPENAI_API_KEY"].present?
       # Process the uploaded image to create an enhanced version
-      ai_image_url = generate_landscape_image
+      ai_image_url = generate_with_gpt_image_1
     else
       ai_image_url = generate_dummy_image_url
     end
@@ -66,53 +66,55 @@ class LandscapePromptBuilder
     "https://placehold.co/#{width}x#{height}"
   end
   
-  # Generate landscape image using the gpt-image-1 model
-  def generate_landscape_image
+  # Generate landscape image using ONLY the gpt-image-1 model
+  def generate_with_gpt_image_1
     begin
-      # Download the original image if attached
-      original_image_path = nil
-      if photo.original_image.attached?
-        original_image_path = download_blob_to_tempfile(photo.original_image.blob)
-        Rails.logger.debug("Downloaded original image to: #{original_image_path}")
+      # Ensure we have an original image to work with
+      unless photo.original_image.attached?
+        Rails.logger.error("No image attached to photo")
+        return generate_dummy_image_url
       end
-
-      # Build a descriptive prompt based on the design templates
+      
+      # Download the original image to a temporary file
+      original_image_path = download_blob_to_tempfile(photo.original_image.blob)
+      Rails.logger.debug("Downloaded original image to: #{original_image_path}")
+      
+      # Create a detailed prompt for landscape enhancement
       prompt = build_prompt
       Rails.logger.debug("Using prompt: #{prompt}")
       
-      # Call OpenAI API to generate an image with gpt-image-1 model
+      # Set up parameters for the gpt-image-1 model, including the user's uploaded image
       parameters = {
-        model: "gpt-image-1",
+        model: "gpt-image-1",  # Only use gpt-image-1, never DALL-E
         prompt: prompt,
         n: 1
       }
       
-      # Add the image parameter if we have an original image
+      # Add the user's uploaded image to the request
       if original_image_path && File.exist?(original_image_path)
         parameters[:image] = File.open(original_image_path, "rb")
-        Rails.logger.debug("Added input image to request")
+        Rails.logger.debug("Added user's image to the request for editing")
       end
       
-      Rails.logger.debug("Calling OpenAI images API with model: gpt-image-1")
+      # Call the OpenAI API
+      Rails.logger.debug("Calling OpenAI API with gpt-image-1 model")
       response = @client.images.generate(parameters: parameters)
       
-      # Log the response for debugging
-      Rails.logger.debug("OpenAI API responded successfully")
-      
-      # Extract and return the image URL from the response
+      # Extract the URL from the response
       if response["data"] && response["data"][0] && response["data"][0]["url"]
         image_url = response["data"][0]["url"]
-        Rails.logger.debug("Generated image URL: #{image_url[0..30]}...")
+        Rails.logger.debug("Successfully generated enhanced image: #{image_url[0..30]}...")
         return image_url
       else
-        Rails.logger.error("No URL found in API response")
+        # If no URL in response, log and use dummy
+        Rails.logger.error("No URL in API response: #{response.inspect}")
         return generate_dummy_image_url
       end
     rescue => e
-      # Log the detailed error
-      Rails.logger.error("OpenAI API Error: #{e.message}")
+      # Log error and use dummy image
+      Rails.logger.error("gpt-image-1 API error: #{e.message}")
       Rails.logger.error(e.backtrace.join("\n"))
-      generate_dummy_image_url
+      return generate_dummy_image_url
     ensure
       # Clean up temporary files
       begin
@@ -130,7 +132,7 @@ class LandscapePromptBuilder
     # Construct a detailed prompt for the AI image generation
     # This prompt is designed to generate a landscaped version of the property
     <<~PROMPT
-      Generate a photorealistic enhanced landscaping design for a residential property.
+      Transform this property photo with enhanced landscaping.
       
       Design details:
       - Style: #{templates[:style]}
@@ -142,10 +144,12 @@ class LandscapePromptBuilder
       - Water conservation: #{constraints[:water_conservation] ? 'Required' : 'Optional'}
       - Maintenance level: #{constraints[:maintenance_level]}
       
-      The image should be a realistic photo, not a drawing or cartoon.
-      Show a beautiful home with perfect landscaping including well-manicured lawn, garden beds with flowers,
-      decorative stone pathways, and proper lighting. The landscaping should frame the home
-      and enhance its architectural features.
+      The result should be a realistic photo with beautiful landscaping including:
+      - Well-manicured lawn
+      - Garden beds with colorful flowering plants
+      - Decorative stone pathways
+      - Landscape lighting features
+      - The landscaping should frame the home and enhance its architectural features
     PROMPT
   end
   
