@@ -9,6 +9,9 @@ Rails.application.configure do
   # Eager load code on boot for better performance and memory savings (ignored by Rake tasks).
   config.eager_load = true
 
+  # Make sure services directory is eager loaded in production
+  config.eager_load_paths << Rails.root.join('app', 'services')
+
   # Full error reports are disabled.
   config.consider_all_requests_local = false
 
@@ -38,7 +41,7 @@ Rails.application.configure do
   config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!)
-  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
+  config.log_level = "debug"
 
   # Prevent health checks from clogging up the logs.
   config.silence_healthcheck_path = "/up"
