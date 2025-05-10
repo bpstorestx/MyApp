@@ -1,3 +1,5 @@
+require 'base64'
+
 class LandscapePromptBuilder
   attr_reader :photo, :dimensions
 
@@ -79,26 +81,24 @@ class LandscapePromptBuilder
       original_image_path = download_blob_to_tempfile(photo.original_image.blob)
       Rails.logger.debug("Downloaded original image to: #{original_image_path}")
       
+      # Open the image file for binary reading
+      image_data = File.binread(original_image_path)
+      base64_image = Base64.strict_encode64(image_data)
+      
       # Create a detailed prompt for landscape enhancement
       prompt = build_prompt
       Rails.logger.debug("Using prompt: #{prompt}")
       
-      # Set up parameters for the gpt-image-1 model, including the user's uploaded image
-      parameters = {
-        model: "gpt-image-1",  # Only use gpt-image-1, never DALL-E
-        prompt: prompt,
-        n: 1
-      }
-      
-      # Add the user's uploaded image to the request
-      if original_image_path && File.exist?(original_image_path)
-        parameters[:image] = File.open(original_image_path, "rb")
-        Rails.logger.debug("Added user's image to the request for editing")
-      end
-      
-      # Call the OpenAI API
+      # Set up parameters for the gpt-image-1 model
       Rails.logger.debug("Calling OpenAI API with gpt-image-1 model")
-      response = @client.images.generate(parameters: parameters)
+      response = @client.images.edit(
+        parameters: {
+          model: "gpt-image-1",
+          image: base64_image,
+          prompt: prompt,
+          n: 1
+        }
+      )
       
       # Extract the URL from the response
       if response["data"] && response["data"][0] && response["data"][0]["url"]
