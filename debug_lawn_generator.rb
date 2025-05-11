@@ -5,6 +5,11 @@
 require File.expand_path('./config/environment', __dir__)
 require 'tempfile'
 require 'base64'
+require 'json'
+
+# Enable full logging to console
+Rails.logger = Logger.new(STDOUT)
+Rails.logger.level = Logger::DEBUG
 
 puts "===== Landscape Enhancement Debug Tool ====="
 puts "Using gpt-image-1 to edit the user's uploaded image"
@@ -19,6 +24,21 @@ end
 puts "✅ API Key detected: #{api_key[0..5]}...#{api_key[-4..-1]}"
 puts "API Key length: #{api_key.length} characters"
 
+# Check OpenAI configuration
+begin
+  puts "\nChecking OpenAI configuration in initializers..."
+  openai_initializer = File.join(Rails.root, 'config', 'initializers', 'openai.rb')
+  if File.exist?(openai_initializer)
+    puts "✅ OpenAI initializer found"
+    puts "Contents:"
+    puts File.read(openai_initializer)
+  else
+    puts "❌ OpenAI initializer not found"
+  end
+rescue => e
+  puts "Error checking OpenAI configuration: #{e.message}"
+end
+
 # Check if the test image exists
 test_image_path = File.join(Rails.root, 'Test_Lawn.webp')
 unless File.exist?(test_image_path)
@@ -28,6 +48,8 @@ unless File.exist?(test_image_path)
 end
 
 puts "✅ Test image located at: #{test_image_path}"
+puts "File size: #{File.size(test_image_path)} bytes"
+puts "File type: WebP"
 
 # Find an existing photo or create a new one
 photo = if Photo.exists?
@@ -85,6 +107,44 @@ begin
   
   # Process the photo with actual service
   puts "\nProcessing photo with LandscapePromptBuilder..."
+  
+  # Check if we can directly access the OpenAI client
+  begin
+    puts "Testing OpenAI client initialization..."
+    client = OpenAI::Client.new(access_token: ENV['OPENAI_API_KEY'])
+    puts "✅ OpenAI client initialized successfully"
+    
+    # Try a simple models list call to verify API key works
+    puts "Testing API key with models.list..."
+    models = client.models.list
+    if models["data"]
+      puts "✅ API key is valid (got models list response)"
+      models_names = models["data"].map { |m| m["id"] }
+      if models_names.include?("gpt-image-1")
+        puts "✅ gpt-image-1 model is available"
+      else
+        puts "⚠️ gpt-image-1 model not found in available models"
+        puts "Available models: #{models_names.sort.join(', ')}"
+      end
+    else
+      puts "❌ API key may not be valid (no models list response)"
+      puts "Response: #{models.inspect}"
+    end
+  rescue => e
+    puts "❌ Error testing OpenAI client: #{e.message}"
+    puts "Error details: #{e.inspect}"
+    
+    if e.respond_to?(:response) && e.response
+      puts "Response status: #{e.response[:status]}"
+      
+      body = e.response[:body]
+      if body
+        puts "Response body: #{body}"
+      end
+    end
+  end
+  
+  # Now run the actual service
   result = service.process
   
   puts "✅ Service completed successfully!"
@@ -94,11 +154,11 @@ begin
   if result.ai_image_url.include?("placehold.co")
     puts "\n⚠️ Notice: Used placeholder image (API call might have failed)"
     puts "Check Rails logs for detailed error information"
-    # Print last 10 lines of log for convenience
+    # Print last 20 lines of log for convenience
     log_file = File.join(Rails.root, 'log', "#{Rails.env}.log")
     if File.exist?(log_file)
-      puts "\nLast 10 lines of log file:"
-      puts File.readlines(log_file).last(10)
+      puts "\nLast 20 lines of log file:"
+      puts File.readlines(log_file).last(20)
     end
   else
     puts "\n🎉 Success! Enhanced landscape generated with gpt-image-1"
@@ -109,6 +169,7 @@ begin
   end
 rescue => e
   puts "❌ Error: #{e.message}"
+  puts "Error details: #{e.inspect}"
   puts e.backtrace.join("\n")
 end
 
