@@ -28,7 +28,7 @@ class FloorplanGenerator
   
   def generate_dummy_layout
     # Dummy layout generator for when OpenAI is not available
-    dummy_url = "https://placehold.co/400.png"
+    dummy_url = "https://placehold.co/402x401.png"
     
     # Update the floorplan with the generated layout URL
     @floorplan.update!(
