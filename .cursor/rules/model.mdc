@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+for models, always use "gpt-image-1" and never use DALL-E.

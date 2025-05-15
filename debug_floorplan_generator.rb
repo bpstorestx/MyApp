@@ -40,7 +40,12 @@ end
 # Test with OpenAI API key
 def test_with_openai
   puts "\n=== Testing FloorplanGenerator with OpenAI ==="
-  ENV["OPENAI_API_KEY"] = "dummy_key_for_testing"
+  
+  # Use the actual API key from environment
+  if ENV["OPENAI_API_KEY"].nil?
+    puts "Error: OPENAI_API_KEY environment variable is not set"
+    return
+  end
   
   floorplan = MockFloorplan.new
   generator = FloorplanGenerator.new(floorplan)
@@ -48,13 +53,14 @@ def test_with_openai
   puts "Before generation: #{floorplan}"
   generator.generate
   puts "After generation: #{floorplan}"
-  
-  ENV["OPENAI_API_KEY"] = nil
 end
 
 # Test without OpenAI API key
 def test_without_openai
   puts "\n=== Testing FloorplanGenerator without OpenAI ==="
+  
+  # Store the original API key
+  original_key = ENV["OPENAI_API_KEY"]
   ENV["OPENAI_API_KEY"] = nil
   
   floorplan = MockFloorplan.new
@@ -63,6 +69,9 @@ def test_without_openai
   puts "Before generation: #{floorplan}"
   generator.generate
   puts "After generation: #{floorplan}"
+  
+  # Restore the original API key
+  ENV["OPENAI_API_KEY"] = original_key
 end
 
 # Test with error simulation
