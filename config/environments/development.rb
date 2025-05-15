@@ -3,6 +3,11 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  # In the development environment your application's code is reloaded any time
+  # it changes. This slows down response time but is perfect for development
+  # since you don't have to restart the web server when you make code changes.
+  config.cache_classes = false
+
   # Make code changes take effect immediately without server restart.
   config.enable_reloading = true
 
@@ -14,6 +19,12 @@ Rails.application.configure do
 
   # Enable server timing.
   config.server_timing = true
+
+  # Explicitly disable view caching
+  config.action_view.cache_template_loading = false
+
+  # Disable fragment caching
+  config.action_controller.perform_caching = false
 
   # Enable/disable Action Controller caching. By default Action Controller caching is disabled.
   # Run rails dev:cache to toggle Action Controller caching.

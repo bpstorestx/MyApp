@@ -1,0 +1,21 @@
+<h1>Floorplan Details</h1>
+
+<div class="floorplan-details">
+  <h2>Original Floorplan</h2>
+  <% if @floorplan.original_image.attached? %>
+    <%= image_tag @floorplan.original_image, class: "floorplan-image" %>
+  <% end %>
+
+  <h2>Generated Layout</h2>
+  <% if @floorplan.generated_image_url.present? %>
+    <%= image_tag @floorplan.generated_image_url, class: "floorplan-image" %>
+  <% else %>
+    <p>Layout generation pending...</p>
+  <% end %>
+
+  <div class="status">
+    <strong>Status:</strong> <%= @floorplan.status %>
+  </div>
+</div>
+
+<%= link_to "Upload Another Floorplan", new_floorplan_path %> 

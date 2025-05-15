@@ -1,3 +1,56 @@
+<div class="welcome-container">
+  <h1>Welcome to the Floorplan Generator</h1>
+  
+  <p>
+    Upload your commercial office floorplan and receive an AI-redesigned layout.
+    Our tool helps you visualize new possibilities for your workspace.
+  </p>
+
+  <div class="cta-button">
+    <%= link_to "Upload Floorplan", new_floorplan_path, class: "btn btn-primary btn-lg" %>
+  </div>
+
+  <div class="features">
+    <h2>Features:</h2>
+    <ul>
+      <li>Simple upload process</li>
+      <li>Advanced layout generation</li>
+      <li>Compare original and generated designs</li>
+    </ul>
+  </div>
+</div>
+
+<style>
+  .welcome-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+  }
+  
+  .cta-button {
+    margin: 40px 0;
+  }
+  
+  .btn-primary {
+    background-color: #4285f4;
+    color: white;
+    padding: 15px 30px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    display: inline-block;
+  }
+  
+  .features {
+    text-align: left;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+</style>
+
 <h2>Hello Vibe Coders</h2>
 <p>
   The time is now: <%= Time.now %>

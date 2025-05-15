@@ -1,0 +1,23 @@
+<h1>Upload Floorplan</h1>
+
+<%= form_with(model: @floorplan, local: true, multipart: true) do |form| %>
+  <% if @floorplan.errors.any? %>
+    <div class="error-messages">
+      <h2><%= pluralize(@floorplan.errors.count, "error") %> prohibited this floorplan from being saved:</h2>
+      <ul>
+        <% @floorplan.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :original_image, "Floorplan Image" %>
+    <%= form.file_field :original_image, accept: 'image/*' %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit "Upload Floorplan" %>
+  </div>
+<% end %> 
