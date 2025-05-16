@@ -1,0 +1,149 @@
+<h1>My Floorplans</h1>
+
+<div class="floorplans-grid">
+  <% if @floorplans.any? %>
+    <% @floorplans.each do |floorplan| %>
+      <div class="floorplan-card">
+        <div class="floorplan-images">
+          <% if floorplan.original_image.attached? %>
+            <div class="original-image">
+              <h3>Original</h3>
+              <%= image_tag floorplan.original_image, class: "thumbnail" %>
+            </div>
+          <% end %>
+          
+          <div class="generated-image">
+            <h3>Generated</h3>
+            <% if floorplan.generated_image_url.present? %>
+              <%= image_tag floorplan.generated_image_url, class: "thumbnail" %>
+            <% else %>
+              <div class="placeholder">Pending generation...</div>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="floorplan-info">
+          <p class="status <%= floorplan.status %>">Status: <%= floorplan.status.titleize %></p>
+          <p class="timestamp">Created: <%= floorplan.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+          <%= link_to "View Details", floorplan_path(floorplan), class: "view-details-btn" %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <p class="no-floorplans">You haven't generated any floorplans yet.</p>
+  <% end %>
+</div>
+
+<div class="actions">
+  <%= link_to "Generate New Floorplan", new_floorplan_path, class: "new-floorplan-btn" %>
+</div>
+
+<% content_for :styles do %>
+<style>
+  .floorplans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 2rem 0;
+  }
+
+  .floorplan-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .floorplan-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .thumbnail {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  .placeholder {
+    width: 100%;
+    height: 150px;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 4px;
+    color: #666;
+  }
+
+  .floorplan-info {
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  .status {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+
+  .status.completed { color: #2ecc71; }
+  .status.processing { color: #f1c40f; }
+  .status.failed { color: #e74c3c; }
+  .status.pending { color: #95a5a6; }
+
+  .timestamp {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .view-details-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+
+  .view-details-btn:hover {
+    background: #2980b9;
+  }
+
+  .new-floorplan-btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: #2ecc71;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+
+  .new-floorplan-btn:hover {
+    background: #27ae60;
+  }
+
+  .no-floorplans {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    color: #666;
+  }
+
+  h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: #666;
+  }
+</style>
+<% end %> 

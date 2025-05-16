@@ -19,6 +19,8 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  resources :floorplans, only: [:index, :new, :create, :show]
+  resources :floorplans, only: [:index, :new, :create, :show] do
+    get :my_floorplans, on: :collection
+  end
   root 'welcome#index'
 end

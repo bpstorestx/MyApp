@@ -4,9 +4,13 @@ class FloorplansController < ApplicationController
   before_action :require_login, only: [:index]
   
   def index
-    @floorplans = current_user.floorplans
+    @floorplans = current_user.floorplans if logged_in?
   end
-  
+
+  def my_floorplans
+    @floorplans = Floorplan.order(created_at: :desc)
+  end
+
   def new
     @floorplan = Floorplan.new
   end
