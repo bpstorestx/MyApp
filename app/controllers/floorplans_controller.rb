@@ -1,6 +1,11 @@
 class FloorplansController < ApplicationController
   # Explicitly require the FloorplanGenerator
   require_relative '../services/floorplan_generator'
+  before_action :require_login, only: [:index]
+  
+  def index
+    @floorplans = current_user.floorplans
+  end
   
   def new
     @floorplan = Floorplan.new
@@ -9,6 +14,9 @@ class FloorplansController < ApplicationController
   def create
     @floorplan = Floorplan.new(floorplan_params)
     @floorplan.status = 'processing'
+    
+    # Associate with current user if logged in
+    @floorplan.user = current_user if logged_in?
 
     if @floorplan.save
       # Generate the layout after successful upload

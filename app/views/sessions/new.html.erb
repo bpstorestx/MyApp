@@ -1,2 +1,98 @@
-<h1>Sessions#new</h1>
-<p>Find me in app/views/sessions/new.html.erb</p>
+<div class="auth-container">
+  <h2>Login</h2>
+
+  <%= form_with(url: login_path, method: :post, local: true, class: "auth-form") do |f| %>
+    <% if flash[:alert] %>
+      <div class="error-messages">
+        <p><%= flash[:alert] %></p>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= f.label :email %>
+      <%= f.email_field :email, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :password %>
+      <%= f.password_field :password, class: "form-control" %>
+    </div>
+
+    <%= f.submit "Login", class: "submit-button" %>
+  <% end %>
+
+  <div class="auth-links">
+    Don't have an account? <%= link_to "Sign Up", signup_path %>
+  </div>
+</div>
+
+<% content_for :head do %>
+  <style>
+    .auth-container {
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-control {
+      padding: 0.5rem;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    .submit-button {
+      background-color: #007bff;
+      color: white;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .submit-button:hover {
+      background-color: #0056b3;
+    }
+
+    .auth-links {
+      margin-top: 1rem;
+      text-align: center;
+      color: #666;
+    }
+
+    .auth-links a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .auth-links a:hover {
+      text-decoration: underline;
+    }
+
+    .error-messages {
+      color: #dc3545;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+<% end %>

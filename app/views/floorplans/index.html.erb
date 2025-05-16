@@ -1,0 +1,149 @@
+<h1>My Floorplans</h1>
+
+<% if @floorplans.empty? %>
+  <p>You haven't created any floorplans yet.</p>
+<% else %>
+  <div class="floorplans-grid">
+    <% @floorplans.each do |floorplan| %>
+      <div class="floorplan-card">
+        <div class="floorplan-image">
+          <% if floorplan.generated_image_url.present? %>
+            <%= image_tag floorplan.generated_image_url, alt: "Generated Layout" %>
+          <% elsif floorplan.original_image.attached? %>
+            <%= image_tag floorplan.original_image.variant(resize_to_limit: [200, 200]), alt: "Original Floorplan" %>
+          <% else %>
+            <div class="placeholder-image">No image</div>
+          <% end %>
+        </div>
+        <div class="floorplan-details">
+          <p class="floorplan-status <%= floorplan.status %>"><%= floorplan.status.humanize %></p>
+          <p class="floorplan-date">Created: <%= floorplan.created_at.strftime("%B %d, %Y") %></p>
+          <%= link_to "View Details", floorplan_path(floorplan), class: "view-button" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="action-buttons">
+  <%= link_to "Create New Floorplan", new_floorplan_path, class: "create-button" %>
+</div>
+
+<% content_for :head do %>
+  <style>
+    .floorplans-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+      margin: 2rem 0;
+    }
+    
+    .floorplan-card {
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+    }
+    
+    .floorplan-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .floorplan-image {
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #f8f9fa;
+    }
+    
+    .floorplan-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: cover;
+    }
+    
+    .placeholder-image {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      color: #6c757d;
+      font-size: 1.2rem;
+    }
+    
+    .floorplan-details {
+      padding: 1rem;
+    }
+    
+    .floorplan-status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    .floorplan-status.pending {
+      background-color: #ffc107;
+      color: #212529;
+    }
+    
+    .floorplan-status.processing {
+      background-color: #17a2b8;
+      color: white;
+    }
+    
+    .floorplan-status.completed {
+      background-color: #28a745;
+      color: white;
+    }
+    
+    .floorplan-status.failed {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .floorplan-date {
+      color: #6c757d;
+      margin: 0.5rem 0;
+    }
+    
+    .view-button {
+      display: inline-block;
+      padding: 0.5rem 0.75rem;
+      background-color: #007bff;
+      color: white;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+    
+    .view-button:hover {
+      background-color: #0056b3;
+    }
+    
+    .action-buttons {
+      margin-top: 2rem;
+    }
+    
+    .create-button {
+      display: inline-block;
+      padding: 0.75rem 1.25rem;
+      background-color: #28a745;
+      color: white;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+    
+    .create-button:hover {
+      background-color: #218838;
+    }
+  </style>
+<% end %> 

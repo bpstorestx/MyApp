@@ -1,4 +1,5 @@
 class Floorplan < ApplicationRecord
+  belongs_to :user, optional: true
   has_one_attached :original_image
 
   validates :original_image, presence: true

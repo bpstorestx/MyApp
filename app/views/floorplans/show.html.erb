@@ -18,4 +18,9 @@
   </div>
 </div>
 
-<%= link_to "Upload Another Floorplan", new_floorplan_path %> 
+<div class="action-links">
+  <% if logged_in? %>
+    <%= link_to "Back to My Floorplans", floorplans_path %> | 
+  <% end %>
+  <%= link_to "Upload Another Floorplan", new_floorplan_path %>
+</div> 

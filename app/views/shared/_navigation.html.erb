@@ -4,7 +4,9 @@
   </div>
   
   <div class="nav-links">
+    <%= link_to "New Floorplan", new_floorplan_path, class: "nav-link" %>
     <% if logged_in? %>
+      <%= link_to "My Floorplans", floorplans_path, class: "nav-link" %>
       <span class="welcome-text">Welcome, <%= current_user.email %></span>
       <%= button_to "Logout", logout_path, method: :delete, class: "nav-link" %>
     <% else %>
