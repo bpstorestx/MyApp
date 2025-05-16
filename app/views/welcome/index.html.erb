@@ -49,15 +49,19 @@
     max-width: 400px;
     margin: 0 auto;
   }
+
+  .about-me {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+  }
 </style>
 
-<h2>Hello Vibe Coders</h2>
-<p>
-  The time is now: <%= Time.now %>
-</p>
-
 <div class="about-me">
-  <h3>About the Developer</h3>
-  <p>My name is Billy and I like football.</p>
+  <h3>About Me</h3>
+  <p>My name is <%= logged_in? ? current_user.email : "Guest" %> and I like football.</p>
   <p>I live in Texas and I run the LLC BPStoresTX.</p>
 </div> 
