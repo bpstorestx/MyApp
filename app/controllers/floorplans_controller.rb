@@ -23,7 +23,9 @@ class FloorplansController < ApplicationController
     @floorplan = Floorplan.find(params[:id])
     
     # Force update the URL for this floorplan to use the new placeholder
-    @floorplan.update(generated_image_url: "https://placehold.co/400.png") if @floorplan.generated_image_url.include?("via.placeholder.com")
+    if @floorplan.generated_image_url && @floorplan.generated_image_url.include?("via.placeholder.com")
+      @floorplan.update(generated_image_url: "https://placehold.co/400.png")
+    end
   end
 
   private

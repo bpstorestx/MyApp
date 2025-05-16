@@ -45,6 +45,10 @@ class FloorplanGenerator
   end
   
   def generate_with_openai
+    unless @floorplan.original_image.attached?
+      raise "No original image attached to floorplan"
+    end
+
     # Set up the API endpoint
     uri = URI.parse("https://api.openai.com/v1/images/edits")
     
@@ -57,22 +61,23 @@ class FloorplanGenerator
     post_body << "Content-Disposition: form-data; name=\"model\"\r\n\r\n"
     post_body << "gpt-image-1\r\n"
     
-    # Add input image
-    image_path = "2 Test Floorplan.JPG"
-    unless File.exist?(image_path)
-      raise "Required input image not found: #{image_path}"
+    # Create a temporary file from the uploaded image
+    Tempfile.create(['input', '.jpg']) do |temp_file|
+      temp_file.binmode
+      temp_file.write(@floorplan.original_image.download)
+      temp_file.rewind
+      
+      post_body << "--#{boundary}\r\n"
+      post_body << "Content-Disposition: form-data; name=\"image\"; filename=\"#{@floorplan.original_image.filename}\"\r\n"
+      post_body << "Content-Type: #{@floorplan.original_image.content_type}\r\n\r\n"
+      post_body << temp_file.read
+      post_body << "\r\n"
     end
-    
-    post_body << "--#{boundary}\r\n"
-    post_body << "Content-Disposition: form-data; name=\"image\"; filename=\"#{File.basename(image_path)}\"\r\n"
-    post_body << "Content-Type: image/jpeg\r\n\r\n"
-    post_body << File.binread(image_path)
-    post_body << "\r\n"
     
     # Add prompt
     post_body << "--#{boundary}\r\n"
     post_body << "Content-Disposition: form-data; name=\"prompt\"\r\n\r\n"
-    post_body << "Convert this into a clean, top-down architectural image of a professional office layout. Include a large open common area in the center and private offices along the perimeter. Keep the structure realistic with clear walls, windows, and entry points. Exclude bathrooms, furniture, and decorations. Style should be blueprint-like and lease-ready.\r\n"
+    post_body << "Convert this into a clean, top-down architectural image of a professional office layout. Include a large open common area in the center and private offices along the perimeter. Keep the outline the same with the same windows and entry points. Exclude bathrooms, furniture, and decorations. Style should be blueprint-like and lease-ready.\r\n"
     
     # Add closing boundary
     post_body << "--#{boundary}--\r\n"
