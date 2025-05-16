@@ -2,6 +2,13 @@ class FloorplansController < ApplicationController
   # Explicitly require the FloorplanGenerator
   require_relative '../services/floorplan_generator'
   
+  def index
+  end
+
+  def my_floorplans
+    @floorplans = Floorplan.order(created_at: :desc)
+  end
+
   def new
     @floorplan = Floorplan.new
   end

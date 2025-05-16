@@ -1,0 +1,82 @@
+<div class="welcome-container">
+  <h1>Welcome to Floorplan Generator</h1>
+  
+  <div class="main-actions">
+    <%= link_to new_floorplan_path, class: "action-card generate" do %>
+      <h2>Generate New Floorplan</h2>
+      <p>Upload a floorplan image and let AI transform it</p>
+    <% end %>
+
+    <%= link_to my_floorplans_floorplans_path, class: "action-card gallery" do %>
+      <h2>My Floorplans</h2>
+      <p>View all your generated floorplans</p>
+    <% end %>
+  </div>
+</div>
+
+<% content_for :styles do %>
+<style>
+  .welcome-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .welcome-container h1 {
+    margin-bottom: 3rem;
+    color: #2c3e50;
+  }
+
+  .main-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .action-card {
+    display: block;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .action-card h2 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+  }
+
+  .action-card p {
+    color: #666;
+    line-height: 1.5;
+  }
+
+  .action-card.generate {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  }
+
+  .action-card.generate h2,
+  .action-card.generate p {
+    color: white;
+  }
+
+  .action-card.gallery {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  }
+
+  .action-card.gallery h2,
+  .action-card.gallery p {
+    color: white;
+  }
+</style>
+<% end %> 
