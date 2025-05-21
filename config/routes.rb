@@ -11,16 +11,14 @@ Rails.application.routes.draw do
   # Sidekiq Web UI
   require 'sidekiq/web'
   
-  # Admin-only constraint
-  admin_constraint = lambda do |request|
-    current_user_id = request.session[:user_id]
-    current_user_id.present? && User.find_by(id: current_user_id)&.admin?
+  # Use basic HTTP authentication for Sidekiq Web UI
+  Sidekiq::Web.use Rack::Auth::Basic do |username, password|
+    # Simple comparison - replace with more secure credentials in a real production environment
+    username == 'admin' && password == 'password'
   end
   
-  # Mount Sidekiq Web UI with admin constraint
-  constraints admin_constraint do
-    mount Sidekiq::Web => '/sidekiq'
-  end
+  # Mount Sidekiq Web UI
+  mount Sidekiq::Web => '/sidekiq'
   
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
