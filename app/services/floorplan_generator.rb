@@ -37,7 +37,8 @@ class FloorplanGenerator
   end
   
   def generate_dummy_layout
-    dummy_url = "https://placehold.co/402x401.png"
+    # Create a unique dummy URL using the floorplan ID
+    dummy_url = "https://placehold.co/400x400/CCCCCC/333333.png?text=Floorplan+#{@floorplan.id}"
     @floorplan.update!(
       generated_image_url: dummy_url,
       status: "completed"
@@ -97,17 +98,18 @@ class FloorplanGenerator
     if response.is_a?(Net::HTTPSuccess)
       result = JSON.parse(response.body)
       if result["data"] && result["data"][0] && result["data"][0]["b64_json"]
-        # Save the base64 decoded image to a file
-        output_path = Rails.root.join('public', 'generated_images', 'floorplan.png')
+        # Create a unique filename using the floorplan ID
+        filename = "floorplan_#{@floorplan.id}.png"
+        output_path = Rails.root.join('public', 'generated_images', filename)
         FileUtils.mkdir_p(File.dirname(output_path))
         
         File.open(output_path, 'wb') do |f|
           f.write(Base64.decode64(result["data"][0]["b64_json"]))
         end
         
-        # Update the floorplan with the generated image URL
+        # Update the floorplan with the unique generated image URL
         @floorplan.update!(
-          generated_image_url: "/generated_images/floorplan.png",
+          generated_image_url: "/generated_images/#{filename}",
           status: "completed"
         )
       else
