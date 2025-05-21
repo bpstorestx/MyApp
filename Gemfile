@@ -30,7 +30,7 @@ gem "solid_queue"
 gem "solid_cable"
 
 # Background job processing with Sidekiq
-gem "sidekiq", "~> 6.5.9"
+gem "sidekiq", "~> 8.0.3"
 # Sinatra is needed for the Sidekiq web UI
 gem "sinatra", require: false
 # Additional dependencies for Sidekiq Web UI
