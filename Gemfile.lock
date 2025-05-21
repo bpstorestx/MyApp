@@ -159,6 +159,8 @@ GEM
     mini_mime (1.1.5)
     minitest (5.25.5)
     msgpack (1.8.0)
+    mustermann (3.0.3)
+      ruby2_keywords (~> 0.0.1)
     net-imap (0.5.8)
       date
       net-protocol
@@ -202,14 +204,17 @@ GEM
       nio4r (~> 2.0)
     raabro (1.4.0)
     racc (1.8.1)
-    rack (3.1.14)
-    rack-session (2.1.1)
+    rack (2.2.15)
+    rack-protection (3.2.0)
       base64 (>= 0.1.0)
-      rack (>= 3.0.0)
+      rack (~> 2.2, >= 2.2.4)
+    rack-session (1.0.2)
+      rack (< 3)
     rack-test (2.2.0)
       rack (>= 1.3)
-    rackup (2.2.1)
-      rack (>= 3)
+    rackup (1.0.1)
+      rack (< 3)
+      webrick
     rails (8.0.2)
       actioncable (= 8.0.2)
       actionmailbox (= 8.0.2)
@@ -243,6 +248,7 @@ GEM
     rake (13.2.1)
     rdoc (6.13.1)
       psych (>= 4.0.0)
+    redis (4.8.1)
     regexp_parser (2.10.0)
     reline (0.6.1)
       io-console (~> 0.5)
@@ -276,6 +282,7 @@ GEM
       rubocop-performance (>= 1.24)
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
+    ruby2_keywords (0.0.5)
     rubyzip (2.4.1)
     securerandom (0.4.1)
     selenium-webdriver (4.32.0)
@@ -284,6 +291,15 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 3.0)
       websocket (~> 1.0)
+    sidekiq (6.5.12)
+      connection_pool (>= 2.2.5, < 3)
+      rack (~> 2.0)
+      redis (>= 4.5.0, < 5)
+    sinatra (3.2.0)
+      mustermann (~> 3.0)
+      rack (~> 2.2, >= 2.2.4)
+      rack-protection (= 3.2.0)
+      tilt (~> 2.0)
     solid_cable (3.0.7)
       actioncable (>= 7.2)
       activejob (>= 7.2)
@@ -313,6 +329,7 @@ GEM
     thor (1.3.2)
     thruster (0.1.13)
     thruster (0.1.13-x86_64-linux)
+    tilt (2.6.0)
     timeout (0.4.3)
     turbo-rails (2.0.13)
       actionpack (>= 7.1.0)
@@ -331,6 +348,7 @@ GEM
       activemodel (>= 6.0.0)
       bindex (>= 0.4.0)
       railties (>= 6.0.0)
+    webrick (1.9.1)
     websocket (1.2.11)
     websocket-driver (0.7.7)
       base64
@@ -357,9 +375,12 @@ DEPENDENCIES
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
+  rack-protection
   rails (~> 8.0.2)
   rubocop-rails-omakase
   selenium-webdriver
+  sidekiq (~> 6.5.9)
+  sinatra
   solid_cable
   solid_cache
   solid_queue

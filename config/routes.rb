@@ -8,6 +8,20 @@ Rails.application.routes.draw do
   post 'login', to: 'sessions#create'
   delete 'logout', to: 'sessions#destroy', as: 'logout'
   
+  # Sidekiq Web UI
+  require 'sidekiq/web'
+  
+  # Admin-only constraint
+  admin_constraint = lambda do |request|
+    current_user_id = request.session[:user_id]
+    current_user_id.present? && User.find_by(id: current_user_id)&.admin?
+  end
+  
+  # Mount Sidekiq Web UI with admin constraint
+  constraints admin_constraint do
+    mount Sidekiq::Web => '/sidekiq'
+  end
+  
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

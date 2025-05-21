@@ -29,6 +29,13 @@ gem "solid_cache"
 gem "solid_queue"
 gem "solid_cable"
 
+# Background job processing with Sidekiq
+gem "sidekiq", "~> 6.5.9"
+# Sinatra is needed for the Sidekiq web UI
+gem "sinatra", require: false
+# Additional dependencies for Sidekiq Web UI
+gem "rack-protection"
+
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 

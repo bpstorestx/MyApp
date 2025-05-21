@@ -24,6 +24,11 @@ class MockFloorplan
     @generated_image_url = nil
   end
   
+  def original_image
+    # Return the path to the test image
+    File.open("2 Test Floorplan.jpg")
+  end
+  
   def update!(attributes)
     attributes.each do |key, value|
       send("#{key}=", value) if respond_to?("#{key}=")
