@@ -32,6 +32,9 @@ module Myapp
     # Add app/services to autoload paths
     config.autoload_paths += %W(#{config.root}/app/services)
 
+    # Add app/workers to autoload paths
+    config.autoload_paths += %W(#{config.root}/app/workers)
+
     # Use Sidekiq as the job backend
     config.active_job.queue_adapter = :sidekiq
 

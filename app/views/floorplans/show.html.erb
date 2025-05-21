@@ -7,8 +7,17 @@
   <% end %>
 
   <h2>Generated Layout</h2>
-  <% if @floorplan.generated_image_url.present? %>
+  <% if @floorplan.status == 'completed' && @floorplan.generated_image_url.present? %>
     <%= image_tag @floorplan.generated_image_url, class: "floorplan-image" %>
+  <% elsif @floorplan.status == 'pending' || @floorplan.status == 'processing' %>
+    <div class="processing-status">
+      <p>Your floorplan is currently being processed...</p>
+      <div class="progress-indicator">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  <% elsif @floorplan.status == 'failed' %>
+    <p class="error-message">Processing failed. Please try again later.</p>
   <% else %>
     <p>Layout generation pending...</p>
   <% end %>
@@ -23,4 +32,13 @@
     <%= link_to "Back to My Floorplans", floorplans_path %> | 
   <% end %>
   <%= link_to "Upload Another Floorplan", new_floorplan_path %>
-</div> 
+</div>
+
+<% if @floorplan.status == 'pending' || @floorplan.status == 'processing' %>
+  <script>
+    // Auto-refresh the page every 5 seconds while processing
+    setTimeout(function() {
+      window.location.reload();
+    }, 5000);
+  </script>
+<% end %> 

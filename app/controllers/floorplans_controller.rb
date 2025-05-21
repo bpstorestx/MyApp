@@ -1,6 +1,7 @@
 class FloorplansController < ApplicationController
   # Explicitly require the FloorplanGenerator
   require_relative '../services/floorplan_generator'
+  require_relative '../workers/floorplan_worker'
   before_action :require_login, only: [:index]
   
   def index
@@ -17,15 +18,15 @@ class FloorplansController < ApplicationController
 
   def create
     @floorplan = Floorplan.new(floorplan_params)
-    @floorplan.status = 'processing'
+    @floorplan.status = 'pending'
     
     # Associate with current user if logged in
     @floorplan.user = current_user if logged_in?
 
     if @floorplan.save
-      # Generate the layout after successful upload
-      FloorplanGenerator.new(@floorplan).generate
-      redirect_to @floorplan, notice: 'Floorplan was successfully uploaded.'
+      # Enqueue the worker to process the floorplan asynchronously
+      FloorplanWorker.perform_async(@floorplan.id)
+      redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
     else
       render :new, status: :unprocessable_entity
     end
