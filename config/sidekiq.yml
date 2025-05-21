@@ -1,12 +1,16 @@
 ---
-:concurrency: 5
+:verbose: true
+:concurrency: 2
 :max_retries: 3
-:timeout: 300
+:timeout: 30
 
+# Configure queues and their priorities
 :queues:
   - [default, 1]
   - [mailers, 2]
   - [critical, 3]
 
-:verbose: false
+development:
+  :concurrency: 2
+
 :logfile: ./log/sidekiq.log 
