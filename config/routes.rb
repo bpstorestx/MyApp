@@ -11,13 +11,8 @@ Rails.application.routes.draw do
   # Sidekiq Web UI
   require 'sidekiq/web'
   
-  # Use basic HTTP authentication for Sidekiq Web UI
-  Sidekiq::Web.use Rack::Auth::Basic do |username, password|
-    # Simple comparison - replace with more secure credentials in a real production environment
-    username == 'admin' && password == 'password'
-  end
-  
-  # Mount Sidekiq Web UI
+  # No authentication for Sidekiq Web UI in development for easier access
+  # In production, you might want to add authentication back
   mount Sidekiq::Web => '/sidekiq'
   
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
