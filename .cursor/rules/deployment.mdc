@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+We are deploying to heroku. Standard Installation do not re-invent the wheel.

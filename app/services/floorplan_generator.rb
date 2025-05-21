@@ -98,20 +98,24 @@ class FloorplanGenerator
     if response.is_a?(Net::HTTPSuccess)
       result = JSON.parse(response.body)
       if result["data"] && result["data"][0] && result["data"][0]["b64_json"]
-        # Create a unique filename using the floorplan ID
+        # Create a unique filename
         filename = "floorplan_#{@floorplan.id}.png"
-        output_path = Rails.root.join('public', 'generated_images', filename)
-        FileUtils.mkdir_p(File.dirname(output_path))
         
-        File.open(output_path, 'wb') do |f|
-          f.write(Base64.decode64(result["data"][0]["b64_json"]))
+        # Create a temporary file with the decoded image data
+        Tempfile.create([filename, '.png'], binmode: true) do |file|
+          file.write(Base64.decode64(result["data"][0]["b64_json"]))
+          file.rewind
+          
+          # Attach the generated image to the floorplan using ActiveStorage
+          @floorplan.generated_image.attach(
+            io: file,
+            filename: filename,
+            content_type: 'image/png'
+          )
         end
         
-        # Update the floorplan with the unique generated image URL
-        @floorplan.update!(
-          generated_image_url: "/generated_images/#{filename}",
-          status: "completed"
-        )
+        # Update the floorplan status to completed
+        @floorplan.update!(status: "completed")
       else
         raise "Invalid response format from OpenAI API"
       end

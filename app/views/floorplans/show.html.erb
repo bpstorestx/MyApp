@@ -7,8 +7,8 @@
   <% end %>
 
   <h2>Generated Layout</h2>
-  <% if @floorplan.status == 'completed' && @floorplan.generated_image_url.present? %>
-    <%= image_tag @floorplan.generated_image_url, class: "floorplan-image" %>
+  <% if @floorplan.status == 'completed' && @floorplan.generated_image.attached? %>
+    <%= image_tag @floorplan.generated_image, class: "floorplan-image" %>
   <% elsif @floorplan.status == 'pending' || @floorplan.status == 'processing' %>
     <div class="processing-status">
       <p>Your floorplan is currently being processed...</p>
