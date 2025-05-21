@@ -1,4 +1,5 @@
 require 'sidekiq'
+require 'openssl'
 
 # Log Redis URL for debugging
 Rails.logger.info("REDIS CONFIG: REDIS_URL=#{ENV['REDIS_URL'] || 'not set'}")
@@ -11,6 +12,10 @@ redis_conn_opts = {
   reconnect_attempts: 5,  # Allow multiple reconnect attempts
   size: 1  # Reduce connection pool size to minimize issues
 }
+
+# Add SSL options to disable certificate verification
+redis_conn_opts[:ssl_params] = { verify_mode: OpenSSL::SSL::VERIFY_NONE }
+Rails.logger.info("Redis SSL verification disabled")
 
 Sidekiq.configure_server do |config|
   config.redis = redis_conn_opts
