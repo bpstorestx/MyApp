@@ -36,17 +36,7 @@ Sidekiq.configure_server do |config|
   config.redis = redis_config
 end
 
-# Optional: Configure Sidekiq Web UI for monitoring
-Sidekiq::Web.use(Rack::Auth::Basic) do |username, password|
-  ActiveSupport::SecurityUtils.secure_compare(
-    Digest::SHA256.hexdigest(username),
-    Digest::SHA256.hexdigest(ENV['SIDEKIQ_USERNAME'] || 'admin')
-  ) &
-  ActiveSupport::SecurityUtils.secure_compare(
-    Digest::SHA256.hexdigest(password),
-    Digest::SHA256.hexdigest(ENV['SIDEKIQ_PASSWORD'] || 'password')
-  )
-end if Rails.env.production?
+# No authentication for Sidekiq Web UI for easier access
 
 # Only configure Sidekiq Web UI if required
 begin
