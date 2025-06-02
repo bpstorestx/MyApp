@@ -142,11 +142,6 @@
         isDrawingMode: true
       });
       
-      // Add a test rectangle to confirm Fabric is working
-      canvas.add(new fabric.Rect({
-        left: 50, top: 50, width: 100, height: 80, fill: 'rgba(200,0,0,0.3)', selectable: false
-      }));
-      
       // Set brush defaults
       canvas.freeDrawingBrush.width = 3;
       canvas.freeDrawingBrush.color = '#000000';
@@ -203,7 +198,6 @@
       
       // Track objects for undo functionality
       const objectHistory = [];
-      let isInitialRectangle = true;
       
       // Flags to track mode
       let currentMode = 'pen'; // Default mode: 'pen', 'eraser', 'text', 'select'
@@ -300,16 +294,6 @@
       
       // Track added objects for undo
       canvas.on('object:added', function(e) {
-        // Skip the initial test rectangle
-        if (isInitialRectangle) {
-          isInitialRectangle = false;
-          // Remove the test rectangle after a short delay
-          setTimeout(() => {
-            canvas.remove(e.target);
-          }, 500);
-          return;
-        }
-        
         // Skip adding the cursor/editing text to undo history
         // We'll add the final text when committed
         if (isEditing && e.target === currentTextObject) {

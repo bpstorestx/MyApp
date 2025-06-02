@@ -26,7 +26,13 @@ class FloorplansController < ApplicationController
     if @floorplan.save
       # Enqueue the worker to process the floorplan asynchronously
       FloorplanWorker.perform_async(@floorplan.id)
-      redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
+      
+      # Redirect to sketch page if the checkbox was checked
+      if params[:floorplan][:sketch_after_upload] == "1"
+        redirect_to sketch_floorplan_path(@floorplan), notice: 'Floorplan was successfully uploaded. You can now sketch on it.'
+      else
+        redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
+      end
     else
       render :new, status: :unprocessable_entity
     end

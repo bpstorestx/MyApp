@@ -17,6 +17,11 @@
     <%= form.file_field :original_image, accept: 'image/*' %>
   </div>
 
+  <div class="field">
+    <%= form.check_box :sketch_after_upload, id: 'sketch_checkbox' %>
+    <%= form.label :sketch_after_upload, "Sketch on your floorplan for specific design notes" %>
+  </div>
+
   <div class="actions">
     <%= form.submit "Upload Floorplan" %>
   </div>
