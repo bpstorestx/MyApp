@@ -17,6 +17,9 @@ class FloorplansController < ApplicationController
   end
 
   def create
+    # Extract sketch_after_upload parameter before creating the floorplan model
+    sketch_after_upload = params[:floorplan][:sketch_after_upload] == "1"
+    
     @floorplan = Floorplan.new(floorplan_params)
     @floorplan.status = 'pending'
     
@@ -28,7 +31,7 @@ class FloorplansController < ApplicationController
       FloorplanWorker.perform_async(@floorplan.id)
       
       # Redirect to sketch page if the checkbox was checked
-      if params[:floorplan][:sketch_after_upload] == "1"
+      if sketch_after_upload
         redirect_to sketch_floorplan_path(@floorplan), notice: 'Floorplan was successfully uploaded. You can now sketch on it.'
       else
         redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
@@ -54,9 +57,12 @@ class FloorplansController < ApplicationController
   def save_sketch
     @floorplan = Floorplan.find(params[:id])
     
-    if params[:canvas_data].present?
+    # Parse the JSON request
+    sketch_data = JSON.parse(request.body.read)
+    
+    if sketch_data['sketch_image'].present?
       # Process the base64 image data
-      image_data = params[:canvas_data].sub(/^data:image\/\w+;base64,/, '')
+      image_data = sketch_data['sketch_image'].sub(/^data:image\/\w+;base64,/, '')
       decoded_image = Base64.decode64(image_data)
       
       # Create a temporary file
@@ -72,8 +78,22 @@ class FloorplansController < ApplicationController
         content_type: 'image/png'
       )
       
-      # Update the floorplan status
-      @floorplan.update(status: 'sketch_submitted')
+      # Store the canvas JSON data if present
+      if sketch_data['sketch_data'].present?
+        @floorplan.update(
+          sketch_data: sketch_data['sketch_data'],
+          status: 'sketch_submitted'
+        )
+      else
+        @floorplan.update(status: 'sketch_submitted')
+      end
+      
+      # Close and delete the temp file
+      temp_file.close
+      temp_file.unlink
+      
+      # Re-process the floorplan with the sketch data
+      FloorplanWorker.perform_async(@floorplan.id, true) # true indicates to use sketch data
       
       render json: { 
         success: true, 
@@ -84,12 +104,15 @@ class FloorplansController < ApplicationController
       render json: { success: false, message: 'No sketch data received' }, status: :unprocessable_entity
     end
   rescue => e
+    Rails.logger.error("Error saving sketch: #{e.message}")
+    Rails.logger.error(e.backtrace.join("\n"))
     render json: { success: false, message: e.message }, status: :internal_server_error
   end
 
   private
 
   def floorplan_params
+    # Explicitly exclude sketch_after_upload from parameters passed to the model
     params.require(:floorplan).permit(:original_image)
   end
 end 

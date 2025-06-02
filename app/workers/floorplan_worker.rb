@@ -6,20 +6,20 @@ class FloorplanWorker
   
   sidekiq_options queue: 'default', retry: 3
   
-  def perform(floorplan_id)
+  def perform(floorplan_id, use_sketch = false)
     # Find the floorplan by ID
     floorplan = Floorplan.find_by(id: floorplan_id)
     
     return unless floorplan
     
     # Update status to processing if it's still pending
-    if floorplan.status == 'pending'
+    if floorplan.status == 'pending' || floorplan.status == 'sketch_submitted'
       floorplan.update(status: 'processing')
     end
     
     begin
       # Generate the floorplan layout using the existing service
-      FloorplanGenerator.new(floorplan).generate
+      FloorplanGenerator.new(floorplan).generate(use_sketch)
     rescue => e
       # Log the error and update the floorplan status
       Rails.logger.error("FloorplanWorker failed for floorplan ##{floorplan_id}: #{e.message}")

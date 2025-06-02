@@ -1,7 +1,12 @@
 <h1>Sketch on Your Floorplan</h1>
 
 <% if @floorplan.original_image.attached? %>
-  <!-- Hidden <img> for later, not shown initially -->
+  <!-- Original image is loaded as the canvas background, but not modified -->
+  <div class="sketch-info alert alert-info">
+    <p>You are sketching on a copy of your original floorplan. The original will remain unchanged.</p>
+  </div>
+  
+  <!-- Hidden <img> for background loading -->
   <img id="original-img" src="<%= url_for(@floorplan.original_image) %>" style="display: none;" />
 
   <!-- Fabric canvas for drawing -->
@@ -14,10 +19,16 @@
   <div class="tool-panel">
     <button id="pen-tool" class="tool-btn active">Pen</button>
     <button id="eraser-tool" class="tool-btn">Eraser</button>
+    <button id="line-tool" class="tool-btn">Line</button>
     <button id="text-tool" class="tool-btn">Text</button>
     <button id="select-tool" class="tool-btn">Select</button>
     
-    <label>Color: <input type="color" id="color-picker" value="#000000"></label>
+    <div class="color-options">
+      <button id="red-color" class="color-btn active" data-color="#FF0000"></button>
+      <button id="green-color" class="color-btn" data-color="#00FF00"></button>
+      <button id="blue-color" class="color-btn" data-color="#0000FF"></button>
+      <label>Custom: <input type="color" id="color-picker" value="#FF0000"></label>
+    </div>
     
     <!-- Brush size control - for pen and eraser -->
     <div id="brush-controls" class="tool-controls">
@@ -53,7 +64,7 @@
     }
     
     .cursor-circle {
-      position: absolute;
+      position: fixed; /* Change to fixed positioning */
       width: 20px;
       height: 20px;
       border-radius: 50%;
@@ -63,6 +74,31 @@
       transform: translate(-50%, -50%); /* Center the circle on cursor */
       z-index: 1000;
       display: none; /* Hidden by default */
+    }
+    
+    /* Add cursor styles for the canvas based on active tool */
+    #floorplan-canvas {
+      cursor: default;
+    }
+    
+    .pen-active #floorplan-canvas {
+      cursor: crosshair;
+    }
+    
+    .line-active #floorplan-canvas {
+      cursor: crosshair;
+    }
+    
+    .eraser-active #floorplan-canvas {
+      cursor: default; /* We use custom cursor for eraser */
+    }
+    
+    .text-active #floorplan-canvas {
+      cursor: text;
+    }
+    
+    .select-active #floorplan-canvas {
+      cursor: default;
     }
     
     .tool-panel {
@@ -114,6 +150,39 @@
     .action-btn.warning {
       background-color: #dc3545;
     }
+    
+    .color-options {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-right: 10px;
+    }
+    
+    .color-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #ced4da;
+      cursor: pointer;
+      padding: 0;
+    }
+    
+    .color-btn.active {
+      border: 2px solid #000000;
+      transform: scale(1.2);
+    }
+    
+    #red-color {
+      background-color: #FF0000;
+    }
+    
+    #green-color {
+      background-color: #00FF00;
+    }
+    
+    #blue-color {
+      background-color: #0000FF;
+    }
   </style>
 
   <!-- Inline script for canvas initialization -->
@@ -144,7 +213,7 @@
       
       // Set brush defaults
       canvas.freeDrawingBrush.width = 3;
-      canvas.freeDrawingBrush.color = '#000000';
+      canvas.freeDrawingBrush.color = '#FF0000'; // Changed to red default
       
       console.log('Fabric.js canvas initialized successfully');
       
@@ -187,6 +256,7 @@
     function setupTools(canvas) {
       const penTool = document.getElementById('pen-tool');
       const eraserTool = document.getElementById('eraser-tool');
+      const lineTool = document.getElementById('line-tool');
       const textTool = document.getElementById('text-tool');
       const selectTool = document.getElementById('select-tool');
       const undoBtn = document.getElementById('undo-btn');
@@ -196,17 +266,27 @@
       const sizeSlider = document.getElementById('size-slider');
       const sizeValue = document.getElementById('size-value');
       
+      // Color buttons
+      const redColorBtn = document.getElementById('red-color');
+      const greenColorBtn = document.getElementById('green-color');
+      const blueColorBtn = document.getElementById('blue-color');
+      
       // Track objects for undo functionality
       const objectHistory = [];
       
       // Flags to track mode
-      let currentMode = 'pen'; // Default mode: 'pen', 'eraser', 'text', 'select'
+      let currentMode = 'pen'; // Default mode: 'pen', 'eraser', 'text', 'select', 'line'
       
       // Variables for text editing
       let isEditing = false;
       let currentTextObject = null;
       let cursorVisible = true;
       let cursorInterval = null;
+      
+      // Variables for line drawing
+      let isDrawingLine = false;
+      let startPoint = null;
+      let lineObject = null;
       
       // Helper function to set active button
       function setActiveButton(button) {
@@ -215,6 +295,26 @@
           btn.classList.remove('active');
         });
         button.classList.add('active');
+        
+        // Update canvas cursor based on active tool
+        const canvasEl = document.getElementById('floorplan-canvas');
+        const canvasContainer = canvasEl.parentElement;
+        
+        // Remove all tool-specific classes
+        canvasContainer.classList.remove('pen-active', 'eraser-active', 'line-active', 'text-active', 'select-active');
+        
+        // Add class based on current tool
+        if (button.id === 'pen-tool') {
+          canvasContainer.classList.add('pen-active');
+        } else if (button.id === 'eraser-tool') {
+          canvasContainer.classList.add('eraser-active');
+        } else if (button.id === 'line-tool') {
+          canvasContainer.classList.add('line-active');
+        } else if (button.id === 'text-tool') {
+          canvasContainer.classList.add('text-active');
+        } else if (button.id === 'select-tool') {
+          canvasContainer.classList.add('select-active');
+        }
       }
       
       // Helper function to show/hide tool controls
@@ -222,12 +322,13 @@
         const brushControls = document.getElementById('brush-controls');
         const textControls = document.getElementById('text-controls');
         
-        if (toolType === 'text') {
-          brushControls.style.display = 'none';
-          textControls.style.display = 'block';
-        } else {
+        brushControls.style.display = 'none';
+        textControls.style.display = 'none';
+        
+        if (toolType === 'pen' || toolType === 'eraser' || toolType === 'line') {
           brushControls.style.display = 'block';
-          textControls.style.display = 'none';
+        } else if (toolType === 'text') {
+          textControls.style.display = 'block';
         }
         
         // Show/hide custom cursor for eraser
@@ -259,10 +360,9 @@
           adjustedSize = size * 3.0; // 200% larger for size 10
         }
         
-        // Set cursor size (add a little padding for visibility)
-        const cursorSize = adjustedSize * 1.2;
-        customCursor.style.width = cursorSize + 'px';
-        customCursor.style.height = cursorSize + 'px';
+        // Match cursor size to the actual eraser size without padding
+        customCursor.style.width = adjustedSize + 'px';
+        customCursor.style.height = adjustedSize + 'px';
       }
       
       // Remove existing mouse:down handlers
@@ -273,24 +373,264 @@
         if (currentMode === 'text' && !options.target) {
           // Start text editing at click position
           startTextEditing(options.pointer);
+        } else if (currentMode === 'line') {
+          if (!isDrawingLine) {
+            // Start drawing line
+            isDrawingLine = true;
+            startPoint = options.pointer;
+            
+            // Get current color
+            let currentColor = colorPicker ? colorPicker.value : '#FF0000';
+            
+            // Create a temporary line to show as preview
+            lineObject = new fabric.Line(
+              [startPoint.x, startPoint.y, startPoint.x, startPoint.y], 
+              {
+                stroke: currentColor,
+                strokeWidth: sizeSlider ? parseInt(sizeSlider.value) : 3,
+                selectable: false
+              }
+            );
+            canvas.add(lineObject);
+            
+            console.log('Started line at', startPoint, 'with color', currentColor);
+          } else {
+            // Finish drawing line
+            isDrawingLine = false;
+            startPoint = null;
+            
+            // Add the final line to history for undo
+            if (lineObject) {
+              objectHistory.push(lineObject);
+              
+              // Enable the undo button
+              if (undoBtn) {
+                undoBtn.disabled = false;
+              }
+              
+              console.log('Completed line');
+            }
+          }
         }
-        // In select mode or when clicking on objects, default Fabric behavior handles it
       });
       
-      // Track mouse movement for custom cursor
+      // Mouse move event for cursor positioning and line preview
       canvas.on('mouse:move', function(options) {
         const customCursor = document.getElementById('custom-cursor');
         if (!customCursor) return;
         
+        const pointer = options.pointer;
+        
         // Only update cursor if it's visible (eraser mode)
         if (customCursor.style.display === 'block') {
-          const pointer = options.pointer;
-          // Position the cursor at the mouse pointer
-          const canvasRect = canvas.wrapperEl.getBoundingClientRect();
-          customCursor.style.left = pointer.x + 'px';
-          customCursor.style.top = pointer.y + 'px';
+          // Get actual mouse coordinates from the event
+          const mouseEvent = options.e;
+          
+          // Position the cursor at the actual mouse position
+          customCursor.style.left = mouseEvent.clientX + 'px';
+          customCursor.style.top = mouseEvent.clientY + 'px';
+        }
+        
+        // Update line preview if we're drawing a line
+        if (currentMode === 'line' && isDrawingLine && lineObject && startPoint) {
+          // Update the end point of the line as the mouse moves
+          lineObject.set({
+            x2: pointer.x,
+            y2: pointer.y
+          });
+          canvas.renderAll();
         }
       });
+      
+      // Allow double-click to edit text
+      canvas.on('mouse:dblclick', function(options) {
+        if (options.target && options.target.type === 'text') {
+          // Double-clicking on text in select mode enables editing again
+          if (currentMode === 'select') {
+            currentMode = 'text';
+            setActiveButton(textTool);
+            showToolControls('text');
+            
+            // Start editing the existing text
+            isEditing = true;
+            currentTextObject = options.target;
+            
+            // Update font size selector to match the text object's font size
+            const fontSizeSelect = document.getElementById('font-size-select');
+            if (fontSizeSelect) {
+              // Find the closest matching option value
+              const fontSize = currentTextObject.fontSize;
+              const fontSizes = [15, 23, 30, 45]; // The available font sizes
+              
+              // Find the closest matching size
+              let closestSize = fontSizes.reduce((prev, curr) => 
+                Math.abs(curr - fontSize) < Math.abs(prev - fontSize) ? curr : prev
+              );
+              
+              fontSizeSelect.value = closestSize;
+            }
+            
+            // Add cursor at the end
+            const textWithoutCursor = currentTextObject.text.replace('|', '');
+            currentTextObject.set('text', textWithoutCursor + '|');
+            
+            // Start cursor blinking
+            if (cursorInterval) clearInterval(cursorInterval);
+            cursorInterval = setInterval(function() {
+              if (!isEditing) {
+                clearInterval(cursorInterval);
+                return;
+              }
+              
+              cursorVisible = !cursorVisible;
+              updateTextWithCursor();
+            }, 500);
+            
+            canvas.renderAll();
+            
+            // Focus for keyboard input
+            canvas.wrapperEl.tabIndex = 1000;
+            canvas.wrapperEl.focus();
+          }
+        }
+      });
+      
+      // Helper function to set active color button
+      function setActiveColorButton(button) {
+        const colorButtons = document.querySelectorAll('.color-btn');
+        colorButtons.forEach(btn => {
+          btn.classList.remove('active');
+        });
+        button.classList.add('active');
+        
+        // Also update the color picker to match
+        if (colorPicker) {
+          colorPicker.value = button.dataset.color;
+        }
+      }
+      
+      // Color buttons click handlers
+      if (redColorBtn) {
+        redColorBtn.addEventListener('click', () => {
+          const color = '#FF0000';
+          setActiveColorButton(redColorBtn);
+          applySelectedColor(color);
+        });
+      }
+      
+      if (greenColorBtn) {
+        greenColorBtn.addEventListener('click', () => {
+          const color = '#00FF00';
+          setActiveColorButton(greenColorBtn);
+          applySelectedColor(color);
+        });
+      }
+      
+      if (blueColorBtn) {
+        blueColorBtn.addEventListener('click', () => {
+          const color = '#0000FF';
+          setActiveColorButton(blueColorBtn);
+          applySelectedColor(color);
+        });
+      }
+      
+      // Color picker
+      if (colorPicker) {
+        colorPicker.addEventListener('input', () => {
+          applySelectedColor(colorPicker.value);
+          
+          // Remove active class from all color buttons when custom color is selected
+          const colorButtons = document.querySelectorAll('.color-btn');
+          colorButtons.forEach(btn => {
+            btn.classList.remove('active');
+          });
+        });
+      }
+      
+      // Function to apply selected color
+      function applySelectedColor(color) {
+        if (currentMode === 'eraser') {
+          // Don't change eraser color
+          return;
+        }
+        
+        // Apply color to selected object if in select mode with an active object
+        const activeObject = canvas.getActiveObject();
+        if (currentMode === 'select' && activeObject) {
+          if (activeObject.type === 'text') {
+            activeObject.set('fill', color);
+          } else {
+            activeObject.set('stroke', color);
+          }
+          canvas.renderAll();
+        } else if (isEditing && currentTextObject) {
+          // Apply to current editing text
+          currentTextObject.set('fill', color);
+          canvas.renderAll();
+        } else {
+          canvas.freeDrawingBrush.color = color;
+        }
+        
+        console.log('Color changed to: ' + color);
+      }
+      
+      // Size slider - only affects pen and eraser
+      if (sizeSlider && sizeValue) {
+        sizeSlider.addEventListener('input', () => {
+          const size = parseInt(sizeSlider.value);
+          
+          // Calculate adjusted size based on the tool and size
+          let adjustedSize = size;
+          
+          if (currentMode === 'eraser') {
+            // Apply eraser-specific size adjustments
+            if (size >= 2 && size <= 6) {
+              adjustedSize = size * 1.3; // 30% larger for sizes 2-6
+            } else if (size >= 7 && size <= 9) {
+              adjustedSize = size * 1.4; // 40% larger for sizes 7-9
+            } else if (size === 10) {
+              adjustedSize = size * 3.0; // 200% larger for size 10
+            }
+          } else if (size >= 8) {
+            // For pen tool, keep the original 50% increase for 8-10
+            adjustedSize = size * 1.5;
+          }
+          
+          // Apply to drawing brush
+          canvas.freeDrawingBrush.width = adjustedSize;
+          
+          // Update cursor size if in eraser mode
+          if (currentMode === 'eraser') {
+            updateCursorSize();
+          }
+          
+          sizeValue.textContent = size;
+          console.log('Brush size changed to: ' + size + ' (adjusted: ' + adjustedSize + ')');
+        });
+      }
+      
+      // Font size selector - only affects text
+      const fontSizeSelect = document.getElementById('font-size-select');
+      if (fontSizeSelect) {
+        fontSizeSelect.addEventListener('change', () => {
+          const fontSize = parseInt(fontSizeSelect.value);
+          
+          // Apply to currently editing text
+          if (isEditing && currentTextObject) {
+            currentTextObject.set('fontSize', fontSize);
+            canvas.renderAll();
+            console.log('Font size changed to: ' + fontSize);
+          }
+          
+          // Apply to selected text object if in select mode
+          const activeObject = canvas.getActiveObject();
+          if (currentMode === 'select' && activeObject && activeObject.type === 'text') {
+            activeObject.set('fontSize', fontSize);
+            canvas.renderAll();
+            console.log('Font size changed to: ' + fontSize);
+          }
+        });
+      }
       
       // Track added objects for undo
       canvas.on('object:added', function(e) {
@@ -573,6 +913,29 @@
         });
       }
       
+      // Line tool
+      if (lineTool) {
+        lineTool.addEventListener('click', () => {
+          // Commit any ongoing text editing
+          if (isEditing) {
+            commitTextEditing();
+          }
+          
+          currentMode = 'line';
+          canvas.isDrawingMode = false;
+          canvas.selection = false;  // Disable selection in line mode
+          
+          // Make all objects non-selectable in line mode
+          canvas.forEachObject(function(obj) {
+            obj.selectable = false;
+          });
+          
+          setActiveButton(lineTool);
+          showToolControls('line');
+          console.log('Line tool selected');
+        });
+      }
+      
       // Text tool
       if (textTool) {
         textTool.addEventListener('click', () => {
@@ -616,146 +979,6 @@
           setActiveButton(selectTool);
           showToolControls('select');
           console.log('Select tool selected');
-        });
-      }
-      
-      // Allow double-click to edit text
-      canvas.on('mouse:dblclick', function(options) {
-        if (options.target && options.target.type === 'text') {
-          // Double-clicking on text in select mode enables editing again
-          if (currentMode === 'select') {
-            currentMode = 'text';
-            setActiveButton(textTool);
-            showToolControls('text');
-            
-            // Start editing the existing text
-            isEditing = true;
-            currentTextObject = options.target;
-            
-            // Update font size selector to match the text object's font size
-            const fontSizeSelect = document.getElementById('font-size-select');
-            if (fontSizeSelect) {
-              // Find the closest matching option value
-              const fontSize = currentTextObject.fontSize;
-              const fontSizes = [15, 23, 30, 45]; // The available font sizes
-              
-              // Find the closest matching size
-              let closestSize = fontSizes.reduce((prev, curr) => 
-                Math.abs(curr - fontSize) < Math.abs(prev - fontSize) ? curr : prev
-              );
-              
-              fontSizeSelect.value = closestSize;
-            }
-            
-            // Add cursor at the end
-            const textWithoutCursor = currentTextObject.text.replace('|', '');
-            currentTextObject.set('text', textWithoutCursor + '|');
-            
-            // Start cursor blinking
-            if (cursorInterval) clearInterval(cursorInterval);
-            cursorInterval = setInterval(function() {
-              if (!isEditing) {
-                clearInterval(cursorInterval);
-                return;
-              }
-              
-              cursorVisible = !cursorVisible;
-              updateTextWithCursor();
-            }, 500);
-            
-            canvas.renderAll();
-            
-            // Focus for keyboard input
-            canvas.wrapperEl.tabIndex = 1000;
-            canvas.wrapperEl.focus();
-          }
-        }
-      });
-      
-      // Color picker
-      if (colorPicker) {
-        colorPicker.addEventListener('input', () => {
-          if (currentMode === 'eraser') {
-            // Don't change eraser color
-            return;
-          }
-          
-          // Apply color to selected object if in select mode with an active object
-          const activeObject = canvas.getActiveObject();
-          if (currentMode === 'select' && activeObject) {
-            if (activeObject.type === 'text') {
-              activeObject.set('fill', colorPicker.value);
-            } else {
-              activeObject.set('stroke', colorPicker.value);
-            }
-            canvas.renderAll();
-          } else if (isEditing && currentTextObject) {
-            // Apply to current editing text
-            currentTextObject.set('fill', colorPicker.value);
-            canvas.renderAll();
-          } else {
-            canvas.freeDrawingBrush.color = colorPicker.value;
-          }
-          
-          console.log('Color changed to: ' + colorPicker.value);
-        });
-      }
-      
-      // Size slider - only affects pen and eraser
-      if (sizeSlider && sizeValue) {
-        sizeSlider.addEventListener('input', () => {
-          const size = parseInt(sizeSlider.value);
-          
-          // Calculate adjusted size based on the tool and size
-          let adjustedSize = size;
-          
-          if (currentMode === 'eraser') {
-            // Apply eraser-specific size adjustments
-            if (size >= 2 && size <= 6) {
-              adjustedSize = size * 1.3; // 30% larger for sizes 2-6
-            } else if (size >= 7 && size <= 9) {
-              adjustedSize = size * 1.4; // 40% larger for sizes 7-9
-            } else if (size === 10) {
-              adjustedSize = size * 3.0; // 200% larger for size 10
-            }
-          } else if (size >= 8) {
-            // For pen tool, keep the original 50% increase for 8-10
-            adjustedSize = size * 1.5;
-          }
-          
-          // Apply to drawing brush
-          canvas.freeDrawingBrush.width = adjustedSize;
-          
-          // Update cursor size if in eraser mode
-          if (currentMode === 'eraser') {
-            updateCursorSize();
-          }
-          
-          sizeValue.textContent = size;
-          console.log('Brush size changed to: ' + size + ' (adjusted: ' + adjustedSize + ')');
-        });
-      }
-      
-      // Font size selector - only affects text
-      const fontSizeSelect = document.getElementById('font-size-select');
-      if (fontSizeSelect) {
-        fontSizeSelect.addEventListener('change', () => {
-          const fontSize = parseInt(fontSizeSelect.value);
-          
-          // Apply to currently editing text
-          if (isEditing && currentTextObject) {
-            currentTextObject.set('fontSize', fontSize);
-            canvas.renderAll();
-            console.log('Font size changed to: ' + fontSize);
-          }
-          
-          // Apply to selected text object if in select mode
-          const activeObject = canvas.getActiveObject();
-          if (currentMode === 'select' && activeObject && activeObject.type === 'text') {
-            activeObject.set('fontSize', fontSize);
-            canvas.renderAll();
-            console.log('Font size changed to: ' + fontSize);
-          }
         });
       }
       
@@ -819,8 +1042,58 @@
             }
             
             console.log('Saving sketch...');
-            // This is where you would add code to save the sketch
-            alert('Save functionality will be implemented in the next phase');
+            
+            // Show status message
+            const statusMessage = document.getElementById('status-message');
+            if (statusMessage) {
+              statusMessage.textContent = 'Saving sketch...';
+              statusMessage.style.display = 'block';
+              statusMessage.style.backgroundColor = '#f8f9fa';
+            }
+            
+            // Convert canvas to JSON
+            const canvasData = JSON.stringify(canvas.toJSON());
+            
+            // Send data to the server
+            fetch('<%= save_sketch_floorplan_path(@floorplan) %>', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+              },
+              body: JSON.stringify({ 
+                sketch_data: canvasData, 
+                sketch_image: canvas.toDataURL('image/png') 
+              })
+            })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log('Sketch saved successfully:', data);
+              
+              if (statusMessage) {
+                statusMessage.textContent = 'Sketch saved successfully! Redirecting...';
+                statusMessage.style.backgroundColor = '#d4edda';
+              }
+              
+              // Redirect to the floorplan page after a short delay
+              setTimeout(() => {
+                window.location.href = data.redirect_url || '<%= floorplan_path(@floorplan) %>';
+              }, 1500);
+            })
+            .catch(error => {
+              console.error('Error saving sketch:', error);
+              
+              if (statusMessage) {
+                statusMessage.textContent = 'Error saving sketch: ' + error.message;
+                statusMessage.style.backgroundColor = '#f8d7da';
+              }
+            });
+            
           } catch (error) {
             console.error('Error saving sketch:', error);
           }

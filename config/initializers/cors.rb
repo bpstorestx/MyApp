@@ -1,5 +1,8 @@
 # Be sure to restart your server when you modify this file.
 
+# Require the rack-cors gem
+require 'rack/cors'
+
 # Configure CORS for ActiveStorage
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
