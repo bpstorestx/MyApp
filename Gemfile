@@ -36,6 +36,9 @@ gem "sinatra", require: false
 # Additional dependencies for Sidekiq Web UI
 gem "rack-protection"
 
+# CORS handling for Rails API
+gem "rack-cors"
+
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
@@ -50,7 +53,7 @@ gem "sentry-ruby"
 gem "sentry-rails"
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-# gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 1.2"
 
 # AWS SDK for S3 storage
 gem "aws-sdk-s3", require: false

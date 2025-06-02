@@ -40,6 +40,46 @@ class FloorplansController < ApplicationController
       @floorplan.update(generated_image_url: "https://placehold.co/400.png")
     end
   end
+  
+  def sketch
+    @floorplan = Floorplan.find(params[:id])
+  end
+  
+  def save_sketch
+    @floorplan = Floorplan.find(params[:id])
+    
+    if params[:canvas_data].present?
+      # Process the base64 image data
+      image_data = params[:canvas_data].sub(/^data:image\/\w+;base64,/, '')
+      decoded_image = Base64.decode64(image_data)
+      
+      # Create a temporary file
+      temp_file = Tempfile.new(['sketch_', '.png'])
+      temp_file.binmode
+      temp_file.write(decoded_image)
+      temp_file.rewind
+      
+      # Attach the sketched image to the floorplan
+      @floorplan.sketched_image.attach(
+        io: temp_file,
+        filename: "sketch_#{@floorplan.id}.png",
+        content_type: 'image/png'
+      )
+      
+      # Update the floorplan status
+      @floorplan.update(status: 'sketch_submitted')
+      
+      render json: { 
+        success: true, 
+        message: 'Sketch saved successfully',
+        redirect_url: floorplan_path(@floorplan)
+      }
+    else
+      render json: { success: false, message: 'No sketch data received' }, status: :unprocessable_entity
+    end
+  rescue => e
+    render json: { success: false, message: e.message }, status: :internal_server_error
+  end
 
   private
 

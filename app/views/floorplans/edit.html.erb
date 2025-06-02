@@ -1,0 +1,613 @@
+<h1>Annotate Your Floorplan</h1>
+
+<% if @floorplan.original_image.attached? %>
+  <!-- Simple, direct approach to canvas drawing -->
+  
+  <!-- Load Fabric.js directly in this view -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+
+  <!-- Hidden reference image - PRELOAD IT -->
+  <img id="original-img"
+       src="<%= url_for(@floorplan.original_image) %>"
+       style="display: none;"
+       onload="initializeCanvas()" />
+
+  <div class="annotation-container">
+    <div class="original-image-panel">
+      <h3>Original Image</h3>
+      <%= image_tag url_for(@floorplan.original_image), style: "max-width: 100%; border: 1px solid #ccc;" %>
+    </div>
+
+    <div class="drawing-panel">
+      <h3>Drawing Canvas</h3>
+      <div class="canvas-container">
+        <canvas id="floorplan-canvas" width="800" height="600"></canvas>
+      </div>
+      
+      <div class="tool-panel">
+        <button id="pen-tool" class="tool-btn active">Pen</button>
+        <button id="eraser-tool" class="tool-btn">Eraser</button>
+        <button id="text-tool" class="tool-btn">Text</button>
+        
+        <label>Color: <input type="color" id="color-picker" value="#ff0000"></label>
+        <label>Size: <input type="range" id="size-slider" min="1" max="20" value="5"> <span id="size-value">5</span></label>
+        
+        <button id="clear-btn" class="action-btn warning">Clear Canvas</button>
+        <button id="save-btn" class="action-btn primary" data-save-url="<%= save_annotation_floorplan_path(@floorplan) %>" data-redirect-url="<%= floorplan_path(@floorplan) %>">Save & Process</button>
+        <a href="<%= floorplan_path(@floorplan) %>" class="action-btn">Cancel</a>
+      </div>
+    </div>
+  </div>
+  
+  <div id="status-message" style="margin-top: 10px; padding: 8px; background-color: #f8f9fa; border: 1px solid #ddd; display: none;"></div>
+  
+  <!-- Debug info -->
+  <div id="debug-info" style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border: 1px solid #ddd; display: block;">
+    <h4>Debug Information</h4>
+    <div id="debug-output"></div>
+  </div>
+
+  <style>
+    .annotation-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    
+    .original-image-panel, .drawing-panel {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+    }
+    
+    .canvas-container {
+      margin-bottom: 15px;
+    }
+    
+    .tool-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .tool-btn {
+      padding: 6px 12px;
+      background-color: #f8f9fa;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .tool-btn.active {
+      background-color: #0d6efd;
+      color: white;
+      border-color: #0a58ca;
+    }
+    
+    .action-btn {
+      padding: 6px 12px;
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .action-btn.primary {
+      background-color: #0d6efd;
+    }
+    
+    .action-btn.warning {
+      background-color: #dc3545;
+    }
+    
+    canvas {
+      background-color: white;
+      max-width: 100%;
+      touch-action: none;
+      border: 1px solid #ccc;
+    }
+    
+    @media (min-width: 992px) {
+      .annotation-container {
+        flex-direction: row;
+      }
+      
+      .original-image-panel, .drawing-panel {
+        flex: 1;
+      }
+    }
+  </style>
+  
+  <script>
+    // Simple debug function to help troubleshoot
+    function showDebug(message) {
+      const debugInfo = document.getElementById('debug-info');
+      const debugOutput = document.getElementById('debug-output');
+      if (debugInfo && debugOutput) {
+        debugInfo.style.display = 'block';
+        const now = new Date();
+        const timestamp = now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
+        debugOutput.innerHTML += `<p>[${timestamp}] ${message}</p>`;
+      }
+      console.log("[DEBUG]", message);
+    }
+
+    // Show a status message
+    function showStatus(message, isError = false) {
+      const statusMessage = document.getElementById('status-message');
+      if (!statusMessage) return;
+      
+      statusMessage.textContent = message;
+      statusMessage.style.display = 'block';
+      statusMessage.style.backgroundColor = isError ? '#f8d7da' : '#f8f9fa';
+      statusMessage.style.color = isError ? '#721c24' : '#212529';
+      showDebug('Status: ' + message);
+      
+      if (!isError) {
+        setTimeout(() => {
+          statusMessage.style.display = 'none';
+        }, 3000);
+      }
+    }
+
+    // Global reference to the canvas
+    let globalFabricCanvas = null;
+    
+    // Track drawing state
+    let drawingStateLog = [];
+    let hasUserDrawn = false;
+    
+    function logDrawingState(action, details) {
+      const timestamp = new Date().toISOString();
+      const state = { timestamp, action, details };
+      drawingStateLog.push(state);
+      
+      // Keep log at reasonable size
+      if (drawingStateLog.length > 50) {
+        drawingStateLog.shift();
+      }
+      
+      showDebug(`Drawing state: ${action} - ${JSON.stringify(details)}`);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      showDebug('DOMContentLoaded triggered');
+      
+      // Check if Fabric.js is loaded
+      if (typeof fabric === 'undefined') {
+        showDebug('ERROR: Fabric.js is not loaded!');
+      } else {
+        showDebug('Fabric.js is loaded correctly');
+      }
+      
+      // Check elements
+      const canvas = document.getElementById('floorplan-canvas');
+      const img = document.getElementById('original-img');
+      
+      showDebug('Canvas element exists: ' + (canvas ? 'Yes' : 'No'));
+      showDebug('Image element exists: ' + (img ? 'Yes' : 'No'));
+      
+      if (img) {
+        showDebug('Image src: ' + img.src);
+        showDebug('Image complete: ' + img.complete);
+        showDebug('Image natural size: ' + img.naturalWidth + 'x' + img.naturalHeight);
+      }
+    });
+    
+    // Initialize the canvas AFTER the image has loaded
+    function initializeCanvas() {
+      showDebug('Image fully loaded, initializing canvas');
+      const img = document.getElementById('original-img');
+      showDebug('Image natural size now: ' + img.naturalWidth + 'x' + img.naturalHeight);
+      
+      const canvas = document.getElementById('floorplan-canvas');
+      const canvasContainer = canvas.parentElement;
+      
+      // IMPORTANT: Set a fixed size matching the image dimensions for better stability
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        // Scale to fit within 800x600 while maintaining aspect ratio
+        let canvasWidth = img.naturalWidth;
+        let canvasHeight = img.naturalHeight;
+        
+        const maxWidth = 800;
+        const maxHeight = 600;
+        
+        if (canvasWidth > maxWidth) {
+          const scale = maxWidth / canvasWidth;
+          canvasWidth = maxWidth;
+          canvasHeight = Math.floor(canvasHeight * scale);
+        }
+        
+        if (canvasHeight > maxHeight) {
+          const scale = maxHeight / canvasHeight;
+          canvasHeight = maxHeight;
+          canvasWidth = Math.floor(canvasWidth * scale);
+        }
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        
+        showDebug(`Canvas dimensions set to match image: ${canvasWidth}x${canvasHeight}`);
+      } else {
+        showDebug('WARNING: Image dimensions are invalid, using default canvas size');
+      }
+      
+      // Create Fabric canvas with object:added and path:created tracking
+      const fabricCanvas = new fabric.Canvas('floorplan-canvas', {
+        isDrawingMode: true,
+        backgroundColor: 'white',
+        selection: false, // Disable selection to prevent accidental moves
+        fireRightClick: false, // Prevents issues with right-click
+        stopContextMenu: true, // Prevents context menu from appearing
+        perPixelTargetFind: false // Improves performance
+      });
+      
+      // Store in global variable for debugging access
+      globalFabricCanvas = fabricCanvas;
+      
+      // SOLUTION: Use a specific patched version of the PencilBrush for better performance
+      // This extends the standard PencilBrush to ensure paths are completed properly
+      class EnhancedPencilBrush extends fabric.PencilBrush {
+        constructor(canvas) {
+          super(canvas);
+          this._points = [];
+          showDebug('Enhanced PencilBrush created');
+        }
+        
+        onMouseDown(pointer, options) {
+          showDebug('EnhancedPencilBrush: onMouseDown');
+          this._prepareForDrawing(pointer);
+          
+          // Register additional events with capture to ensure they're caught
+          this._captureDrawingEvents(options);
+          
+          this._points = [pointer, pointer];
+        }
+        
+        onMouseMove(pointer, options) {
+          if (this._points.length) {
+            showDebug('EnhancedPencilBrush: Drawing in progress');
+            this._addPoint(pointer);
+          }
+        }
+        
+        onMouseUp(options) {
+          showDebug('EnhancedPencilBrush: Completing path - points: ' + this._points.length);
+          
+          // Only create path if we have enough points
+          if (this._points.length > 2) {
+            // Create the path with the current points
+            const path = this.createPath(this._points);
+            
+            // Set path properties
+            path.stroke = this.color;
+            path.strokeWidth = this.width;
+            path.strokeLineCap = this.strokeLineCap;
+            path.strokeMiterLimit = this.strokeMiterLimit;
+            path.strokeLineJoin = this.strokeLineJoin;
+            path.strokeDashArray = this.strokeDashArray;
+            
+            // Add the path to the canvas
+            this.canvas.add(path);
+            this.canvas.fire('path:created', { path: path });
+            
+            // Force immediate rendering
+            this.canvas.renderAll();
+            
+            showDebug('EnhancedPencilBrush: Path added to canvas');
+          } else {
+            showDebug('EnhancedPencilBrush: Not enough points to create path');
+          }
+          
+          // Clear the points
+          this._points = [];
+          
+          // Remove the mouse capture events
+          this._resetShadow();
+          this.canvas._isCurrentlyDrawing = false;
+        }
+      }
+      
+      // Set up drawing brush with enhanced version
+      fabricCanvas.freeDrawingBrush = new EnhancedPencilBrush(fabricCanvas);
+      fabricCanvas.freeDrawingBrush.width = 5;
+      fabricCanvas.freeDrawingBrush.color = '#ff0000';
+      
+      // Add event listeners to track drawing activity
+      fabricCanvas.on('path:created', function(e) {
+        hasUserDrawn = true;
+        logDrawingState('path:created', { pathId: e.path.id });
+      });
+      
+      fabricCanvas.on('object:added', function(e) {
+        logDrawingState('object:added', { type: e.target.type });
+      });
+      
+      fabricCanvas.on('object:removed', function(e) {
+        logDrawingState('object:removed', { type: e.target.type });
+      });
+      
+      // Track mouse down/up to detect drawing attempts
+      fabricCanvas.on('mouse:down', function(e) {
+        logDrawingState('mouse:down', { x: e.pointer.x, y: e.pointer.y });
+      });
+      
+      fabricCanvas.on('mouse:up', function(e) {
+        logDrawingState('mouse:up', { x: e.pointer.x, y: e.pointer.y });
+        
+        // Check if objects count changed between mouse down and up
+        showDebug(`Canvas objects count: ${fabricCanvas.getObjects().length}`);
+      });
+      
+      // Load the image as background
+      fabric.Image.fromURL(img.src, function(fabricImg) {
+        showDebug('Fabric.js loaded the image');
+        
+        // Configure the image
+        fabricImg.set({
+          left: 0,
+          top: 0,
+          selectable: false,
+          evented: false
+        });
+        
+        // Scale the image to fit the canvas
+        const scaleX = fabricCanvas.getWidth() / fabricImg.width;
+        const scaleY = fabricCanvas.getHeight() / fabricImg.height;
+        const scale = Math.min(scaleX, scaleY);
+        fabricImg.scale(scale);
+        
+        // Set as background
+        fabricCanvas.setBackgroundImage(fabricImg, fabricCanvas.renderAll.bind(fabricCanvas));
+        showDebug('Set image as background');
+        
+        // Draw a test rectangle to verify canvas is working
+        const rect = new fabric.Rect({
+          left: 10,
+          top: 10,
+          width: 20,
+          height: 20,
+          fill: 'blue'
+        });
+        fabricCanvas.add(rect);
+        fabricCanvas.renderAll();
+        showDebug('Added blue test rectangle');
+        
+        showStatus('Canvas ready for drawing');
+        
+        // Set up tool functionality
+        setupTools(fabricCanvas);
+      }, { crossOrigin: 'anonymous' });
+    }
+    
+    // Set up the drawing tools
+    function setupTools(fabricCanvas) {
+      // Configure drawing brush
+      fabricCanvas.freeDrawingBrush.width = 5;
+      fabricCanvas.freeDrawingBrush.color = '#ff0000';
+      
+      // Get tool elements
+      const penTool = document.getElementById('pen-tool');
+      const eraserTool = document.getElementById('eraser-tool');
+      const textTool = document.getElementById('text-tool');
+      const clearBtn = document.getElementById('clear-btn');
+      const saveBtn = document.getElementById('save-btn');
+      const colorPicker = document.getElementById('color-picker');
+      const sizeSlider = document.getElementById('size-slider');
+      const sizeValue = document.getElementById('size-value');
+      
+      // Set active tool helper
+      function setActiveTool(button) {
+        const buttons = document.querySelectorAll('.tool-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+      }
+      
+      // Pen tool
+      if (penTool) {
+        penTool.addEventListener('click', function() {
+          fabricCanvas.isDrawingMode = true;
+          // Important: Create a new brush instance to prevent state issues
+          fabricCanvas.freeDrawingBrush = new EnhancedPencilBrush(fabricCanvas);
+          fabricCanvas.freeDrawingBrush.width = parseInt(sizeSlider ? sizeSlider.value : 5);
+          fabricCanvas.freeDrawingBrush.color = colorPicker ? colorPicker.value : '#ff0000';
+          setActiveTool(penTool);
+          showDebug('Pen tool selected - new PencilBrush created');
+          logDrawingState('tool:pen', { 
+            width: fabricCanvas.freeDrawingBrush.width,
+            color: fabricCanvas.freeDrawingBrush.color
+          });
+        });
+      }
+      
+      // Eraser tool
+      if (eraserTool) {
+        eraserTool.addEventListener('click', function() {
+          fabricCanvas.isDrawingMode = true;
+          // Always create a new brush instance when switching tools
+          fabricCanvas.freeDrawingBrush = new EnhancedPencilBrush(fabricCanvas);
+          fabricCanvas.freeDrawingBrush.width = parseInt(sizeSlider ? sizeSlider.value : 5);
+          fabricCanvas.freeDrawingBrush.color = 'white';
+          setActiveTool(eraserTool);
+          showDebug('Eraser tool selected - new PencilBrush created');
+          logDrawingState('tool:eraser', { 
+            width: fabricCanvas.freeDrawingBrush.width,
+            color: 'white'
+          });
+        });
+      }
+      
+      // Text tool
+      if (textTool) {
+        textTool.addEventListener('click', function() {
+          const text = prompt('Enter text:');
+          if (text) {
+            fabricCanvas.isDrawingMode = false;
+            const textObj = new fabric.Text(text, {
+              left: fabricCanvas.getWidth() / 2,
+              top: fabricCanvas.getHeight() / 2,
+              fill: colorPicker ? colorPicker.value : '#ff0000',
+              fontSize: sizeSlider ? parseInt(sizeSlider.value) * 3 : 20
+            });
+            fabricCanvas.add(textObj);
+            fabricCanvas.renderAll();
+            showDebug('Text added: ' + text);
+            logDrawingState('text:added', { text: text });
+          }
+          
+          // Switch back to pen
+          fabricCanvas.isDrawingMode = true;
+          fabricCanvas.freeDrawingBrush = new EnhancedPencilBrush(fabricCanvas);
+          fabricCanvas.freeDrawingBrush.width = parseInt(sizeSlider ? sizeSlider.value : 5);
+          fabricCanvas.freeDrawingBrush.color = colorPicker ? colorPicker.value : '#ff0000';
+          setActiveTool(penTool);
+        });
+      }
+      
+      // Color picker
+      if (colorPicker) {
+        colorPicker.addEventListener('input', function() {
+          if (eraserTool && eraserTool.classList.contains('active')) {
+            return; // Don't change eraser color
+          }
+          fabricCanvas.freeDrawingBrush.color = this.value;
+          showDebug('Color changed to: ' + this.value);
+          logDrawingState('color:changed', { color: this.value });
+        });
+      }
+      
+      // Size slider
+      if (sizeSlider && sizeValue) {
+        sizeSlider.addEventListener('input', function() {
+          const size = parseInt(this.value);
+          fabricCanvas.freeDrawingBrush.width = size;
+          sizeValue.textContent = size;
+          showDebug('Brush size changed to: ' + size);
+          logDrawingState('size:changed', { size: size });
+        });
+      }
+      
+      // Clear button
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+          if (confirm('Are you sure you want to clear all annotations?')) {
+            // Store object count before clearing
+            const objectCount = fabricCanvas.getObjects().length;
+            
+            // Clear all objects except background
+            const bgImage = fabricCanvas.backgroundImage;
+            fabricCanvas.clear();
+            fabricCanvas.backgroundColor = 'white';
+            
+            // Restore background
+            if (bgImage) {
+              fabricCanvas.setBackgroundImage(bgImage, fabricCanvas.renderAll.bind(fabricCanvas));
+            }
+            
+            showDebug('Canvas cleared - removed ' + objectCount + ' objects');
+            logDrawingState('canvas:cleared', { objectCount: objectCount });
+          }
+        });
+      }
+      
+      // Add a force refresh button for debugging
+      const toolPanel = document.querySelector('.tool-panel');
+      if (toolPanel) {
+        const refreshBtn = document.createElement('button');
+        refreshBtn.textContent = 'Force Refresh';
+        refreshBtn.className = 'action-btn';
+        refreshBtn.style.backgroundColor = '#6c757d';
+        refreshBtn.addEventListener('click', function() {
+          showDebug('Force refreshing canvas');
+          fabricCanvas.renderAll();
+          showDebug('Canvas refreshed - current object count: ' + fabricCanvas.getObjects().length);
+        });
+        toolPanel.appendChild(refreshBtn);
+      }
+      
+      // Save button
+      if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+          showStatus('Saving annotation...');
+          
+          // Log current canvas state before saving
+          const objectCount = fabricCanvas.getObjects().length;
+          showDebug('Save initiated - current object count: ' + objectCount);
+          logDrawingState('save:initiated', { objectCount: objectCount });
+          
+          try {
+            const imageData = fabricCanvas.toDataURL('image/png');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            const saveUrl = saveBtn.getAttribute('data-save-url');
+            
+            showDebug('Sending data to server: ' + saveUrl);
+            
+            fetch(saveUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+              },
+              body: JSON.stringify({
+                canvas_data: imageData
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                showStatus('Annotation saved successfully! Redirecting...');
+                logDrawingState('save:success', { response: data });
+                setTimeout(() => {
+                  window.location.href = data.redirect_url || saveBtn.getAttribute('data-redirect-url');
+                }, 1000);
+              } else {
+                showStatus('Error saving annotation: ' + (data.message || 'Unknown error'), true);
+                logDrawingState('save:error', { message: data.message || 'Unknown error' });
+              }
+            })
+            .catch(error => {
+              showStatus('Error saving annotation: ' + error.message, true);
+              logDrawingState('save:error', { message: error.message });
+            });
+          } catch (error) {
+            showStatus('Error generating image: ' + error.message, true);
+            logDrawingState('save:error', { message: error.message });
+          }
+        });
+      }
+      
+      // Add window unload warning if user has drawn something
+      window.addEventListener('beforeunload', function(e) {
+        if (hasUserDrawn && fabricCanvas.getObjects().length > 0) {
+          const confirmationMessage = 'You have unsaved changes. Are you sure you want to leave?';
+          (e || window.event).returnValue = confirmationMessage;
+          return confirmationMessage;
+        }
+      });
+    }
+    
+    // Add a console command to help with debugging
+    window.dumpCanvasObjects = function() {
+      if (globalFabricCanvas) {
+        console.log("Canvas objects:", globalFabricCanvas.getObjects());
+        showDebug(`Canvas has ${globalFabricCanvas.getObjects().length} objects`);
+        return globalFabricCanvas.getObjects().length;
+      } else {
+        showDebug("Canvas not initialized yet");
+        return 0;
+      }
+    };
+  </script>
+<% else %>
+  <div style="color: red; margin: 20px 0;">
+    <p>No image is attached to this floorplan. Please upload an image first.</p>
+    <a href="<%= floorplan_path(@floorplan) %>" class="btn btn-secondary">Back</a>
+  </div>
+<% end %> 
+<% end %> 

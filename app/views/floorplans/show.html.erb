@@ -28,6 +28,9 @@
 </div>
 
 <div class="action-links">
+  <% if @floorplan.original_image.attached? %>
+    <%= link_to "Sketch on this Floorplan", sketch_floorplan_path(@floorplan), class: "btn btn-primary" %> |
+  <% end %>
   <% if logged_in? %>
     <%= link_to "Back to My Floorplans", floorplans_path %> | 
   <% end %>

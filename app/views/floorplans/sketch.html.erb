@@ -1,0 +1,881 @@
+<h1>Sketch on Your Floorplan</h1>
+
+<% if @floorplan.original_image.attached? %>
+  <!-- Hidden <img> for later, not shown initially -->
+  <img id="original-img" src="<%= url_for(@floorplan.original_image) %>" style="display: none;" />
+
+  <!-- Fabric canvas for drawing -->
+  <div class="canvas-container">
+    <canvas id="floorplan-canvas" width="800" height="600"></canvas>
+    <div id="custom-cursor" class="cursor-circle"></div>
+  </div>
+  
+  <!-- Tool Panel -->
+  <div class="tool-panel">
+    <button id="pen-tool" class="tool-btn active">Pen</button>
+    <button id="eraser-tool" class="tool-btn">Eraser</button>
+    <button id="text-tool" class="tool-btn">Text</button>
+    <button id="select-tool" class="tool-btn">Select</button>
+    
+    <label>Color: <input type="color" id="color-picker" value="#000000"></label>
+    
+    <!-- Brush size control - for pen and eraser -->
+    <div id="brush-controls" class="tool-controls">
+      <label>Brush Size: <input type="range" id="size-slider" min="1" max="10" value="3"> <span id="size-value">3</span></label>
+    </div>
+    
+    <!-- Text size control - only shown when text tool is active -->
+    <div id="text-controls" class="tool-controls" style="display: none;">
+      <label>Font Size: 
+        <select id="font-size-select">
+          <option value="15">Small</option>
+          <option value="23" selected>Medium</option>
+          <option value="30">Large</option>
+          <option value="45">X-Large</option>
+        </select>
+      </label>
+    </div>
+    
+    <button id="undo-btn" class="action-btn">Undo</button>
+    <button id="clear-btn" class="action-btn warning">Clear Canvas</button>
+    <button id="save-btn" class="action-btn primary">Save Sketch</button>
+    <a href="<%= floorplan_path(@floorplan) %>" class="action-btn">Cancel</a>
+  </div>
+  
+  <div id="status-message" style="margin-top: 10px; padding: 8px; background-color: #f8f9fa; border: 1px solid #ddd; display: none;"></div>
+  
+  <style>
+    .canvas-container {
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      display: inline-block;
+      position: relative;
+    }
+    
+    .cursor-circle {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(0, 0, 0, 0.4);
+      pointer-events: none; /* Allow clicks to pass through */
+      transform: translate(-50%, -50%); /* Center the circle on cursor */
+      z-index: 1000;
+      display: none; /* Hidden by default */
+    }
+    
+    .tool-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 15px 0;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+    }
+    
+    .tool-btn {
+      padding: 6px 12px;
+      background-color: #f8f9fa;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .tool-btn.active {
+      background-color: #0d6efd;
+      color: white;
+      border-color: #0a58ca;
+    }
+    
+    .action-btn {
+      padding: 6px 12px;
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .action-btn.primary {
+      background-color: #0d6efd;
+    }
+    
+    .action-btn.warning {
+      background-color: #dc3545;
+    }
+  </style>
+
+  <!-- Inline script for canvas initialization -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, initializing canvas...');
+      
+      // Find the canvas element for sketching
+      const canvasEl = document.getElementById('floorplan-canvas');
+      
+      if (!canvasEl) {
+        console.log('No canvas element found on this page');
+        return;
+      }
+      
+      console.log('Canvas element found, initializing Fabric.js...');
+      
+      // Make sure Fabric.js is loaded
+      if (typeof fabric === 'undefined') {
+        console.error('Fabric.js is not loaded. Please check the script inclusion.');
+        return;
+      }
+      
+      // Create Fabric canvas and enable freehand drawing
+      const canvas = new fabric.Canvas('floorplan-canvas', {
+        isDrawingMode: true
+      });
+      
+      // Add a test rectangle to confirm Fabric is working
+      canvas.add(new fabric.Rect({
+        left: 50, top: 50, width: 100, height: 80, fill: 'rgba(200,0,0,0.3)', selectable: false
+      }));
+      
+      // Set brush defaults
+      canvas.freeDrawingBrush.width = 3;
+      canvas.freeDrawingBrush.color = '#000000';
+      
+      console.log('Fabric.js canvas initialized successfully');
+      
+      // Check if we should load a background image
+      const originalImg = document.getElementById('original-img');
+      if (originalImg && originalImg.complete) {
+        loadBackgroundImage(canvas, originalImg);
+      } else if (originalImg) {
+        originalImg.onload = function() {
+          loadBackgroundImage(canvas, originalImg);
+        };
+      }
+      
+      // Setup tool buttons
+      setupTools(canvas);
+    });
+    
+    // Load the original image as the canvas background
+    function loadBackgroundImage(canvas, imgElement) {
+      console.log('Loading background image...');
+      
+      fabric.Image.fromURL(imgElement.src, img => {
+        // Scale the image to fit the canvas
+        const canvasWidth = canvas.getWidth();
+        const canvasHeight = canvas.getHeight();
+        
+        const scaleX = canvasWidth / img.width;
+        const scaleY = canvasHeight / img.height;
+        const scale = Math.min(scaleX, scaleY);
+        
+        img.scale(scale);
+        
+        // Set as background and render
+        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+        console.log('Background image loaded successfully');
+      }, { crossOrigin: 'anonymous' });
+    }
+    
+    // Setup the drawing tools
+    function setupTools(canvas) {
+      const penTool = document.getElementById('pen-tool');
+      const eraserTool = document.getElementById('eraser-tool');
+      const textTool = document.getElementById('text-tool');
+      const selectTool = document.getElementById('select-tool');
+      const undoBtn = document.getElementById('undo-btn');
+      const clearBtn = document.getElementById('clear-btn');
+      const saveBtn = document.getElementById('save-btn');
+      const colorPicker = document.getElementById('color-picker');
+      const sizeSlider = document.getElementById('size-slider');
+      const sizeValue = document.getElementById('size-value');
+      
+      // Track objects for undo functionality
+      const objectHistory = [];
+      let isInitialRectangle = true;
+      
+      // Flags to track mode
+      let currentMode = 'pen'; // Default mode: 'pen', 'eraser', 'text', 'select'
+      
+      // Variables for text editing
+      let isEditing = false;
+      let currentTextObject = null;
+      let cursorVisible = true;
+      let cursorInterval = null;
+      
+      // Helper function to set active button
+      function setActiveButton(button) {
+        const toolButtons = document.querySelectorAll('.tool-btn');
+        toolButtons.forEach(btn => {
+          btn.classList.remove('active');
+        });
+        button.classList.add('active');
+      }
+      
+      // Helper function to show/hide tool controls
+      function showToolControls(toolType) {
+        const brushControls = document.getElementById('brush-controls');
+        const textControls = document.getElementById('text-controls');
+        
+        if (toolType === 'text') {
+          brushControls.style.display = 'none';
+          textControls.style.display = 'block';
+        } else {
+          brushControls.style.display = 'block';
+          textControls.style.display = 'none';
+        }
+        
+        // Show/hide custom cursor for eraser
+        const customCursor = document.getElementById('custom-cursor');
+        if (customCursor) {
+          if (toolType === 'eraser') {
+            customCursor.style.display = 'block';
+            updateCursorSize();
+          } else {
+            customCursor.style.display = 'none';
+          }
+        }
+      }
+      
+      // Function to update cursor size based on brush size
+      function updateCursorSize() {
+        const customCursor = document.getElementById('custom-cursor');
+        if (!customCursor) return;
+        
+        const size = sizeSlider ? parseInt(sizeSlider.value) : 3;
+        let adjustedSize = size;
+        
+        // Apply eraser-specific size adjustments
+        if (size >= 2 && size <= 6) {
+          adjustedSize = size * 1.3; // 30% larger for sizes 2-6
+        } else if (size >= 7 && size <= 9) {
+          adjustedSize = size * 1.4; // 40% larger for sizes 7-9
+        } else if (size === 10) {
+          adjustedSize = size * 3.0; // 200% larger for size 10
+        }
+        
+        // Set cursor size (add a little padding for visibility)
+        const cursorSize = adjustedSize * 1.2;
+        customCursor.style.width = cursorSize + 'px';
+        customCursor.style.height = cursorSize + 'px';
+      }
+      
+      // Remove existing mouse:down handlers
+      canvas.off('mouse:down');
+      
+      // Add canvas click handler
+      canvas.on('mouse:down', function(options) {
+        if (currentMode === 'text' && !options.target) {
+          // Start text editing at click position
+          startTextEditing(options.pointer);
+        }
+        // In select mode or when clicking on objects, default Fabric behavior handles it
+      });
+      
+      // Track mouse movement for custom cursor
+      canvas.on('mouse:move', function(options) {
+        const customCursor = document.getElementById('custom-cursor');
+        if (!customCursor) return;
+        
+        // Only update cursor if it's visible (eraser mode)
+        if (customCursor.style.display === 'block') {
+          const pointer = options.pointer;
+          // Position the cursor at the mouse pointer
+          const canvasRect = canvas.wrapperEl.getBoundingClientRect();
+          customCursor.style.left = pointer.x + 'px';
+          customCursor.style.top = pointer.y + 'px';
+        }
+      });
+      
+      // Track added objects for undo
+      canvas.on('object:added', function(e) {
+        // Skip the initial test rectangle
+        if (isInitialRectangle) {
+          isInitialRectangle = false;
+          // Remove the test rectangle after a short delay
+          setTimeout(() => {
+            canvas.remove(e.target);
+          }, 500);
+          return;
+        }
+        
+        // Skip adding the cursor/editing text to undo history
+        // We'll add the final text when committed
+        if (isEditing && e.target === currentTextObject) {
+          console.log('Skipping text being edited for undo history');
+          return;
+        }
+        
+        // Skip tracking text with cursor
+        if (e.target && e.target.type === 'text' && e.target.text && e.target.text.includes('|')) {
+          console.log('Skipping text with cursor for undo history');
+          return;
+        }
+        
+        // Add object to history
+        console.log('Adding to undo history:', e.target.type);
+        objectHistory.push(e.target);
+        
+        // Enable the undo button
+        if (undoBtn) {
+          undoBtn.disabled = false;
+        }
+      });
+      
+      // Function to start text editing at a specific position
+      function startTextEditing(pointer) {
+        // If already editing, commit the current text
+        if (isEditing) {
+          commitTextEditing();
+        }
+        
+        // Create a new text object with cursor
+        const textObj = new fabric.Text('|', {
+          left: pointer.x,
+          top: pointer.y,
+          fill: colorPicker ? colorPicker.value : '#000000',
+          fontSize: document.getElementById('font-size-select') ? 
+            parseInt(document.getElementById('font-size-select').value) : 23,
+          selectable: true,
+          editable: true
+        });
+        
+        // Add to canvas but don't track in history yet until committed
+        canvas.add(textObj);
+        canvas.renderAll();
+        
+        // Set up variables for editing
+        isEditing = true;
+        currentTextObject = textObj;
+        
+        // Start the cursor blinking
+        if (cursorInterval) clearInterval(cursorInterval);
+        cursorInterval = setInterval(function() {
+          if (!isEditing) {
+            clearInterval(cursorInterval);
+            return;
+          }
+          
+          cursorVisible = !cursorVisible;
+          updateTextWithCursor();
+        }, 500);
+        
+        // Focus the canvas for keyboard input
+        canvas.wrapperEl.tabIndex = 1000;
+        canvas.wrapperEl.focus();
+        
+        console.log('Text editing started');
+      }
+      
+      // Function to update text with or without cursor
+      function updateTextWithCursor() {
+        if (!currentTextObject) return;
+        
+        const currentText = currentTextObject.text;
+        const textWithoutCursor = currentText.replace('|', '');
+        
+        if (cursorVisible) {
+          currentTextObject.set('text', textWithoutCursor + '|');
+        } else {
+          currentTextObject.set('text', textWithoutCursor);
+        }
+        
+        canvas.renderAll();
+      }
+      
+      // Function to commit text editing
+      function commitTextEditing() {
+        if (!isEditing || !currentTextObject) return;
+        
+        // Remove the cursor from the text
+        const finalText = currentTextObject.text.replace('|', '');
+        
+        // If the text is empty, remove the object
+        if (finalText === '') {
+          // Remove from undo history if present
+          const index = objectHistory.indexOf(currentTextObject);
+          if (index !== -1) {
+            objectHistory.splice(index, 1);
+          }
+          canvas.remove(currentTextObject);
+        } else {
+          // Update the text without cursor
+          currentTextObject.set('text', finalText);
+          
+          // Ensure this final text object is in the object history
+          // First check if it's already there
+          if (!objectHistory.includes(currentTextObject)) {
+            objectHistory.push(currentTextObject);
+          }
+        }
+        
+        canvas.renderAll();
+        
+        // Reset variables
+        isEditing = false;
+        currentTextObject = null;
+        if (cursorInterval) {
+          clearInterval(cursorInterval);
+          cursorInterval = null;
+        }
+        
+        // Switch to select mode after adding text
+        if (selectTool) {
+          selectTool.click();
+        }
+        
+        console.log('Text editing committed');
+      }
+      
+      // Add keyboard event handlers for text input
+      document.addEventListener('keydown', function(e) {
+        if (!isEditing) return;
+        
+        // Prevent default behavior for most keys while editing
+        if (e.key !== 'F5' && e.key !== 'F12' && !e.ctrlKey && !e.altKey) {
+          e.preventDefault();
+        }
+        
+        if (e.key === 'Escape') {
+          // Cancel editing on Escape
+          isEditing = false;
+          canvas.remove(currentTextObject);
+          currentTextObject = null;
+          clearInterval(cursorInterval);
+          cursorInterval = null;
+          
+          // Switch back to select mode
+          if (selectTool) {
+            selectTool.click();
+          }
+        } else if (e.key === 'Enter') {
+          // Commit text on Enter
+          commitTextEditing();
+        } else if (e.key === 'Backspace') {
+          // Handle backspace
+          if (isEditing && currentTextObject) {
+            const currentText = currentTextObject.text.replace('|', '');
+            if (currentText.length > 0) {
+              const newText = currentText.substring(0, currentText.length - 1);
+              currentTextObject.set('text', newText + (cursorVisible ? '|' : ''));
+              canvas.renderAll();
+            }
+          }
+        } else if (e.key.length === 1) {
+          // Regular character input
+          if (isEditing && currentTextObject) {
+            const currentText = currentTextObject.text.replace('|', '');
+            currentTextObject.set('text', currentText + e.key + (cursorVisible ? '|' : ''));
+            canvas.renderAll();
+          }
+        }
+      });
+      
+      // Undo button - simple implementation that just removes the last added object
+      if (undoBtn) {
+        // Disable undo button initially
+        undoBtn.disabled = true;
+        
+        undoBtn.addEventListener('click', function() {
+          // Commit any ongoing text editing
+          if (isEditing) {
+            commitTextEditing();
+          }
+          
+          // Get the last object from history
+          if (objectHistory.length > 0) {
+            const lastObject = objectHistory.pop();
+            
+            // Remove the object from canvas
+            if (lastObject) {
+              console.log('Undoing: removing object type:', lastObject.type);
+              canvas.remove(lastObject);
+              canvas.renderAll();
+              
+              console.log('Undo: removed last object');
+            }
+            
+            // Disable undo button if no more objects in history
+            if (objectHistory.length === 0) {
+              undoBtn.disabled = true;
+            }
+          }
+        });
+        
+        // Add keyboard shortcut for undo (Ctrl+Z)
+        document.addEventListener('keydown', function(e) {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !isEditing) {
+            e.preventDefault();
+            undoBtn.click();
+          }
+        });
+      }
+      
+      // Setup tools
+      
+      // Pen tool
+      if (penTool) {
+        penTool.addEventListener('click', () => {
+          // Commit any ongoing text editing
+          if (isEditing) {
+            commitTextEditing();
+          }
+          
+          currentMode = 'pen';
+          canvas.isDrawingMode = true;
+          canvas.selection = false;  // Disable selection in drawing mode
+          
+          // Make all objects non-selectable in drawing mode
+          canvas.forEachObject(function(obj) {
+            obj.selectable = false;
+          });
+          
+          canvas.freeDrawingBrush.color = colorPicker ? colorPicker.value : '#000000';
+          setActiveButton(penTool);
+          showToolControls('pen');
+          console.log('Pen tool selected');
+        });
+      }
+      
+      // Eraser tool
+      if (eraserTool) {
+        eraserTool.addEventListener('click', () => {
+          // Commit any ongoing text editing
+          if (isEditing) {
+            commitTextEditing();
+          }
+          
+          currentMode = 'eraser';
+          canvas.isDrawingMode = true;
+          canvas.selection = false;  // Disable selection in eraser mode
+          
+          // Make all objects non-selectable in eraser mode
+          canvas.forEachObject(function(obj) {
+            obj.selectable = false;
+          });
+          
+          // Set eraser color
+          canvas.freeDrawingBrush.color = '#ffffff'; // White for eraser
+          
+          // Apply the size adjustment for current eraser size
+          const size = sizeSlider ? parseInt(sizeSlider.value) : 3;
+          let adjustedSize = size;
+          
+          // Apply eraser-specific size adjustments
+          if (size >= 2 && size <= 6) {
+            adjustedSize = size * 1.3; // 30% larger for sizes 2-6
+          } else if (size >= 7 && size <= 9) {
+            adjustedSize = size * 1.4; // 40% larger for sizes 7-9
+          } else if (size === 10) {
+            adjustedSize = size * 3.0; // 200% larger for size 10
+          }
+          
+          canvas.freeDrawingBrush.width = adjustedSize;
+          
+          setActiveButton(eraserTool);
+          showToolControls('eraser');
+          console.log('Eraser tool selected');
+        });
+      }
+      
+      // Text tool
+      if (textTool) {
+        textTool.addEventListener('click', () => {
+          // Commit any ongoing text editing
+          if (isEditing) {
+            commitTextEditing();
+          }
+          
+          currentMode = 'text';
+          canvas.isDrawingMode = false;
+          canvas.selection = false;  // Disable selection in text mode to prevent confusion
+          
+          // Make all objects non-selectable in text mode
+          canvas.forEachObject(function(obj) {
+            obj.selectable = false;
+          });
+          
+          setActiveButton(textTool);
+          showToolControls('text');
+          console.log('Text tool selected - Click to add text');
+        });
+      }
+      
+      // Select tool
+      if (selectTool) {
+        selectTool.addEventListener('click', () => {
+          // Commit any ongoing text editing
+          if (isEditing) {
+            commitTextEditing();
+          }
+          
+          currentMode = 'select';
+          canvas.isDrawingMode = false;
+          canvas.selection = true;  // Enable selection in select mode
+          
+          // Make all objects selectable in select mode
+          canvas.forEachObject(function(obj) {
+            obj.selectable = true;
+          });
+          
+          setActiveButton(selectTool);
+          showToolControls('select');
+          console.log('Select tool selected');
+        });
+      }
+      
+      // Allow double-click to edit text
+      canvas.on('mouse:dblclick', function(options) {
+        if (options.target && options.target.type === 'text') {
+          // Double-clicking on text in select mode enables editing again
+          if (currentMode === 'select') {
+            currentMode = 'text';
+            setActiveButton(textTool);
+            showToolControls('text');
+            
+            // Start editing the existing text
+            isEditing = true;
+            currentTextObject = options.target;
+            
+            // Update font size selector to match the text object's font size
+            const fontSizeSelect = document.getElementById('font-size-select');
+            if (fontSizeSelect) {
+              // Find the closest matching option value
+              const fontSize = currentTextObject.fontSize;
+              const fontSizes = [15, 23, 30, 45]; // The available font sizes
+              
+              // Find the closest matching size
+              let closestSize = fontSizes.reduce((prev, curr) => 
+                Math.abs(curr - fontSize) < Math.abs(prev - fontSize) ? curr : prev
+              );
+              
+              fontSizeSelect.value = closestSize;
+            }
+            
+            // Add cursor at the end
+            const textWithoutCursor = currentTextObject.text.replace('|', '');
+            currentTextObject.set('text', textWithoutCursor + '|');
+            
+            // Start cursor blinking
+            if (cursorInterval) clearInterval(cursorInterval);
+            cursorInterval = setInterval(function() {
+              if (!isEditing) {
+                clearInterval(cursorInterval);
+                return;
+              }
+              
+              cursorVisible = !cursorVisible;
+              updateTextWithCursor();
+            }, 500);
+            
+            canvas.renderAll();
+            
+            // Focus for keyboard input
+            canvas.wrapperEl.tabIndex = 1000;
+            canvas.wrapperEl.focus();
+          }
+        }
+      });
+      
+      // Color picker
+      if (colorPicker) {
+        colorPicker.addEventListener('input', () => {
+          if (currentMode === 'eraser') {
+            // Don't change eraser color
+            return;
+          }
+          
+          // Apply color to selected object if in select mode with an active object
+          const activeObject = canvas.getActiveObject();
+          if (currentMode === 'select' && activeObject) {
+            if (activeObject.type === 'text') {
+              activeObject.set('fill', colorPicker.value);
+            } else {
+              activeObject.set('stroke', colorPicker.value);
+            }
+            canvas.renderAll();
+          } else if (isEditing && currentTextObject) {
+            // Apply to current editing text
+            currentTextObject.set('fill', colorPicker.value);
+            canvas.renderAll();
+          } else {
+            canvas.freeDrawingBrush.color = colorPicker.value;
+          }
+          
+          console.log('Color changed to: ' + colorPicker.value);
+        });
+      }
+      
+      // Size slider - only affects pen and eraser
+      if (sizeSlider && sizeValue) {
+        sizeSlider.addEventListener('input', () => {
+          const size = parseInt(sizeSlider.value);
+          
+          // Calculate adjusted size based on the tool and size
+          let adjustedSize = size;
+          
+          if (currentMode === 'eraser') {
+            // Apply eraser-specific size adjustments
+            if (size >= 2 && size <= 6) {
+              adjustedSize = size * 1.3; // 30% larger for sizes 2-6
+            } else if (size >= 7 && size <= 9) {
+              adjustedSize = size * 1.4; // 40% larger for sizes 7-9
+            } else if (size === 10) {
+              adjustedSize = size * 3.0; // 200% larger for size 10
+            }
+          } else if (size >= 8) {
+            // For pen tool, keep the original 50% increase for 8-10
+            adjustedSize = size * 1.5;
+          }
+          
+          // Apply to drawing brush
+          canvas.freeDrawingBrush.width = adjustedSize;
+          
+          // Update cursor size if in eraser mode
+          if (currentMode === 'eraser') {
+            updateCursorSize();
+          }
+          
+          sizeValue.textContent = size;
+          console.log('Brush size changed to: ' + size + ' (adjusted: ' + adjustedSize + ')');
+        });
+      }
+      
+      // Font size selector - only affects text
+      const fontSizeSelect = document.getElementById('font-size-select');
+      if (fontSizeSelect) {
+        fontSizeSelect.addEventListener('change', () => {
+          const fontSize = parseInt(fontSizeSelect.value);
+          
+          // Apply to currently editing text
+          if (isEditing && currentTextObject) {
+            currentTextObject.set('fontSize', fontSize);
+            canvas.renderAll();
+            console.log('Font size changed to: ' + fontSize);
+          }
+          
+          // Apply to selected text object if in select mode
+          const activeObject = canvas.getActiveObject();
+          if (currentMode === 'select' && activeObject && activeObject.type === 'text') {
+            activeObject.set('fontSize', fontSize);
+            canvas.renderAll();
+            console.log('Font size changed to: ' + fontSize);
+          }
+        });
+      }
+      
+      // Track path creation for undo
+      canvas.on('path:created', function(e) {
+        // Add the path to our history
+        objectHistory.push(e.path);
+        
+        // Enable the undo button
+        if (undoBtn) {
+          undoBtn.disabled = false;
+        }
+      });
+      
+      // Clear button
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          if (confirm('Are you sure you want to clear all sketches?')) {
+            // Commit any ongoing text editing
+            if (isEditing) {
+              commitTextEditing();
+            }
+            
+            // Clear object history
+            objectHistory.length = 0;
+            
+            // Remove all objects but keep background
+            const backgroundImage = canvas.backgroundImage;
+            canvas.clear();
+            
+            // Restore background
+            if (backgroundImage) {
+              canvas.setBackgroundImage(backgroundImage, canvas.renderAll.bind(canvas));
+            } else {
+              canvas.backgroundColor = 'white';
+              canvas.renderAll();
+            }
+            
+            // Disable undo button
+            if (undoBtn) {
+              undoBtn.disabled = true;
+            }
+            
+            console.log('Canvas cleared');
+            
+            // Reset to pen tool after clearing
+            if (penTool) {
+              penTool.click();
+            }
+          }
+        });
+      }
+      
+      // Save button
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+          try {
+            // Commit any ongoing text editing
+            if (isEditing) {
+              commitTextEditing();
+            }
+            
+            console.log('Saving sketch...');
+            // This is where you would add code to save the sketch
+            alert('Save functionality will be implemented in the next phase');
+          } catch (error) {
+            console.error('Error saving sketch:', error);
+          }
+        });
+      }
+      
+      // Start with pen tool active
+      if (penTool) {
+        penTool.click();
+      }
+      
+      // Function to deselect all objects
+      function deselectAll() {
+        canvas.discardActiveObject();
+        canvas.renderAll();
+      }
+      
+      // Add keyboard shortcut for delete key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Delete' && !isEditing) {
+          const activeObject = canvas.getActiveObject();
+          if (activeObject) {
+            // Remove from history when deleted
+            const index = objectHistory.indexOf(activeObject);
+            if (index !== -1) {
+              objectHistory.splice(index, 1);
+            }
+            
+            canvas.remove(activeObject);
+            console.log('Object deleted');
+          }
+        }
+      });
+    }
+  </script>
+<% else %>
+  <div class="alert alert-warning">
+    This floorplan doesn't have an image attached. Please upload an image first.
+  </div>
+  
+  <%= link_to 'Back to Floorplan', floorplan_path(@floorplan), class: 'btn btn-primary' %>
+<% end %> 

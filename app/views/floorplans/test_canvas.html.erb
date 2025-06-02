@@ -1,0 +1,101 @@
+<h1>Canvas Test Page</h1>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+
+<div style="margin: 20px;">
+  <canvas id="test-canvas" width="400" height="300" style="border: 1px solid black;"></canvas>
+</div>
+
+<div style="margin: 20px;">
+  <button id="draw-rect">Draw Rectangle</button>
+  <button id="draw-circle">Draw Circle</button>
+  <button id="clear-canvas">Clear Canvas</button>
+</div>
+
+<div id="status" style="margin: 20px; padding: 10px; background-color: #f8f9fa; border: 1px solid #ddd;"></div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Log status
+    function log(message) {
+      const status = document.getElementById('status');
+      status.innerHTML += '<p>' + message + '</p>';
+      console.log(message);
+    }
+    
+    log('DOMContentLoaded event fired');
+    
+    try {
+      // Check if Fabric.js is loaded
+      if (typeof fabric === 'undefined') {
+        log('ERROR: Fabric.js is not loaded!');
+        return;
+      }
+      
+      log('Fabric.js is loaded successfully');
+      
+      // Initialize canvas
+      const canvas = new fabric.Canvas('test-canvas', {
+        backgroundColor: 'white'
+      });
+      
+      log('Canvas initialized');
+      
+      // Draw initial rectangle to verify canvas works
+      const rect = new fabric.Rect({
+        left: 50,
+        top: 50,
+        width: 100,
+        height: 100,
+        fill: 'red'
+      });
+      
+      canvas.add(rect);
+      canvas.renderAll();
+      
+      log('Red rectangle drawn on canvas');
+      
+      // Button handlers
+      document.getElementById('draw-rect').addEventListener('click', function() {
+        const rect = new fabric.Rect({
+          left: Math.random() * 300,
+          top: Math.random() * 200,
+          width: 50 + Math.random() * 50,
+          height: 50 + Math.random() * 50,
+          fill: 'green'
+        });
+        
+        canvas.add(rect);
+        canvas.renderAll();
+        
+        log('Green rectangle added');
+      });
+      
+      document.getElementById('draw-circle').addEventListener('click', function() {
+        const circle = new fabric.Circle({
+          left: Math.random() * 300,
+          top: Math.random() * 200,
+          radius: 25 + Math.random() * 25,
+          fill: 'blue'
+        });
+        
+        canvas.add(circle);
+        canvas.renderAll();
+        
+        log('Blue circle added');
+      });
+      
+      document.getElementById('clear-canvas').addEventListener('click', function() {
+        canvas.clear();
+        canvas.backgroundColor = 'white';
+        canvas.renderAll();
+        
+        log('Canvas cleared');
+      });
+      
+    } catch (error) {
+      log('ERROR: ' + error.message);
+      console.error(error);
+    }
+  });
+</script> 

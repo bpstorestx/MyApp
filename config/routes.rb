@@ -27,6 +27,10 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   resources :floorplans, only: [:index, :new, :create, :show] do
+    member do
+      get :sketch
+      post :save_sketch
+    end
     get :my_floorplans, on: :collection
   end
   root 'welcome#index'
