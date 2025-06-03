@@ -1,0 +1,291 @@
+<div class="account-container">
+  <h1>Account Management</h1>
+  
+  <div class="account-info">
+    <h2>Account Information</h2>
+    <div class="info-section">
+      <p><strong>Email:</strong> <%= @user.email %></p>
+      <p><strong>Member since:</strong> <%= @user.created_at.strftime('%B %d, %Y') %></p>
+    </div>
+  </div>
+
+  <div class="subscription-info">
+    <h2>Subscription Status</h2>
+    
+    <% if @user.subscribed? %>
+      <div class="subscription-active">
+        <div class="status-badge active">✓ Active Subscription</div>
+        
+        <% if @subscription_details %>
+          <div class="subscription-details">
+            <p><strong>Plan:</strong> AI Floorplan Design Premium ($9/month)</p>
+            <p><strong>Status:</strong> 
+              <span class="status-<%= @subscription_details[:status] %>">
+                <%= @subscription_details[:status].titleize %>
+              </span>
+            </p>
+            
+            <% if @subscription_details[:current_period_start] && @subscription_details[:current_period_end] %>
+              <p><strong>Current billing period:</strong> 
+                <%= @subscription_details[:current_period_start].strftime('%B %d, %Y') %> - 
+                <%= @subscription_details[:current_period_end].strftime('%B %d, %Y') %>
+              </p>
+              <p><strong>Next billing date:</strong> 
+                <%= @subscription_details[:current_period_end].strftime('%B %d, %Y') %>
+              </p>
+              
+              <% if @subscription_details[:cancel_at_period_end] %>
+                <div class="cancellation-notice">
+                  <p><strong>⚠️ Subscription set to cancel:</strong> Your subscription will end on <%= @subscription_details[:current_period_end].strftime('%B %d, %Y') %></p>
+                  <p>You'll continue to have access until then.</p>
+                  
+                  <%= button_to "Reactivate Subscription", reactivate_subscription_path, 
+                      method: :patch,
+                      class: "btn btn-success",
+                      data: { 
+                        confirm: "Are you sure you want to reactivate your subscription? You'll be charged $9/month starting from the next billing cycle." 
+                      } %>
+                </div>
+              <% else %>
+                <div class="cancel-section">
+                  <%= button_to "Cancel Subscription", cancel_subscription_path, 
+                      method: :patch,
+                      class: "btn btn-danger",
+                      data: { 
+                        confirm: "Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your current billing period." 
+                      } %>
+                  <p class="cancel-note">You'll continue to have access until <%= @subscription_details[:current_period_end].strftime('%B %d, %Y') %></p>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="subscription-warning">
+                <p><strong>⚠️ Billing information unavailable</strong></p>
+                <p>Your subscription is active, but we're having trouble loading billing details from Stripe.</p>
+                
+                <div class="cancel-section">
+                  <%= button_to "Cancel Subscription", cancel_subscription_path, 
+                      method: :patch,
+                      class: "btn btn-danger",
+                      data: { 
+                        confirm: "Are you sure you want to cancel your subscription? You'll lose access to premium features." 
+                      } %>
+                  <p class="cancel-note">This will cancel your subscription at the end of the current billing period.</p>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p>Unable to load subscription details. Please refresh the page or contact support.</p>
+        <% end %>
+      </div>
+      
+    <% else %>
+      <div class="subscription-inactive">
+        <div class="status-badge inactive">No Active Subscription</div>
+        <p>You don't currently have an active subscription.</p>
+        
+        <div class="upgrade-section">
+          <%= button_to "Upgrade to Premium ($9/month)", subscribe_path, 
+              method: :post,
+              class: "btn btn-primary btn-lg",
+              data: { 
+                confirm: "Ready to upgrade to premium for $9/month?",
+                disable_with: "Processing..." 
+              } %>
+        </div>
+        
+        <div class="features-list">
+          <h3>Premium Features Include:</h3>
+          <ul>
+            <li>✓ Unlimited floorplan uploads</li>
+            <li>✓ Advanced AI layout generation</li>
+            <li>✓ Custom design prompts</li>
+            <li>✓ High-resolution exports</li>
+            <li>✓ Priority support</li>
+          </ul>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="account-actions">
+    <h2>Account Actions</h2>
+    <div class="action-links">
+      <%= link_to "View My Floorplans", floorplans_path, class: "btn btn-outline" %>
+      <%= link_to "Create New Floorplan", new_floorplan_path, class: "btn btn-outline" %>
+    </div>
+  </div>
+</div>
+
+<style>
+  .account-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 30px;
+  }
+
+  .account-info, .subscription-info, .account-actions {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .info-section {
+    border-left: 4px solid #4285f4;
+    padding-left: 15px;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+
+  .status-badge.active {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  .status-badge.inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+
+  .subscription-details {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 15px;
+  }
+
+  .subscription-details p {
+    margin-bottom: 8px;
+  }
+
+  .status-active {
+    color: #28a745;
+    font-weight: bold;
+  }
+
+  .status-canceled {
+    color: #dc3545;
+    font-weight: bold;
+  }
+
+  .cancellation-notice {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+  }
+
+  .subscription-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+  }
+
+  .cancel-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #dee2e6;
+  }
+
+  .cancel-note {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 10px;
+  }
+
+  .upgrade-section {
+    text-align: center;
+    margin: 20px 0;
+  }
+
+  .features-list {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 6px;
+    margin-top: 20px;
+  }
+
+  .features-list ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .features-list li {
+    padding: 5px 0;
+    color: #155724;
+  }
+
+  .action-links {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background-color: #4285f4;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #3367d6;
+  }
+
+  .btn-success {
+    background-color: #28a745;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background-color: #218838;
+  }
+
+  .btn-danger {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background-color: #c82333;
+  }
+
+  .btn-outline {
+    background-color: transparent;
+    color: #4285f4;
+    border: 2px solid #4285f4;
+  }
+
+  .btn-outline:hover {
+    background-color: #4285f4;
+    color: white;
+  }
+
+  .btn-lg {
+    padding: 15px 30px;
+    font-size: 1.1em;
+  }
+</style> 

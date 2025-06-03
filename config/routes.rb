@@ -8,6 +8,15 @@ Rails.application.routes.draw do
   post 'login', to: 'sessions#create'
   delete 'logout', to: 'sessions#destroy', as: 'logout'
   
+  # Account management routes
+  get 'account', to: 'account#show', as: 'account'
+  patch 'account/cancel_subscription', to: 'account#cancel_subscription', as: 'cancel_subscription'
+  patch 'account/reactivate_subscription', to: 'account#reactivate_subscription', as: 'reactivate_subscription'
+  
+  # Subscription routes
+  post 'subscribe', to: 'subscriptions#create', as: 'subscribe'
+  post 'webhooks/stripe', to: 'subscriptions#webhook'
+  
   # Sidekiq Web UI
   require 'sidekiq/web'
   
