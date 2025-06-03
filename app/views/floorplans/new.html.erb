@@ -103,10 +103,12 @@
 <%= form_with(model: @floorplan, local: true, multipart: true) do |form| %>
   <% if @floorplan.errors.any? %>
     <div class="error-messages">
-      <h2><%= pluralize(@floorplan.errors.count, "error") %> prohibited this floorplan from being saved:</h2>
       <ul>
-        <% @floorplan.errors.full_messages.each do |msg| %>
-          <li><%= msg %></li>
+        <% @floorplan.errors.each do |error| %>
+          <% if error.attribute == :original_image %>
+            <li><%= error.message %></li>
+            <% break %>
+          <% end %>
         <% end %>
       </ul>
     </div>
@@ -155,7 +157,7 @@
         <% end %>
       </div>
     <% else %>
-      <%= form.submit "Upload Floorplan", class: "upload-btn" %>
+      <%= form.submit "Re-Design Your Floorplan", class: "upload-btn" %>
     <% end %>
   </div>
 <% end %>

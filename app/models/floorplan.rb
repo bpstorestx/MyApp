@@ -4,7 +4,7 @@ class Floorplan < ApplicationRecord
   has_one_attached :generated_image
   has_one_attached :sketched_image
 
-  validates :original_image, presence: true
+  validates :original_image, presence: { message: "Upload your floorplan first to start creating!" }
   validates :status, presence: true, inclusion: { in: %w[pending processing completed failed sketch_submitted custom_prompt_submitted] }
   
   # Virtual attribute for handling the sketch_after_upload checkbox
