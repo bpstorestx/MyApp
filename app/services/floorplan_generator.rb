@@ -167,10 +167,7 @@ class FloorplanGenerator
       # Add prompt parameter
       post_body << "--#{boundary}\r\n"
       post_body << "Content-Disposition: form-data; name=\"prompt\"\r\n\r\n"
-      post_body << "You are a master architect specializing in modern efficient office space design. Your work emphasizes flow of a workspace with doors and open layout combining for efficiency. "
-      post_body << "For this project you are advising a commercial real estate client. He has provided you a floorplan and sketched out what he wants added. "
-      post_body << "Do not adjust any *exterior walls or exterior doors*. "
-      post_body << "Generate an updated floorplan using his sketched lines and text notes that were drawn in the floorplan provided"
+      post_body << "Office space architect: Client has sketched RED modifications on their floorplan. Incorporate all RED sketched lines and text instructions into a professional floorplan. Convert RED lines to BLACK in final design. Remove all RED text annotations. Do not modify exterior walls or doors. Generate an efficient and walkable office floorplan"
       
       # Add text elements from the sketch if available
       if text_elements.any?

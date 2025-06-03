@@ -6,7 +6,7 @@
 <% if image_to_use.attached? %>
   <!-- Image is loaded as the canvas background, but not modified -->
   <div class="sketch-info alert alert-info">
-    <p>You are sketching on a copy of your <%= image_type %> floorplan. The <%= image_type %> will remain unchanged.</p>
+    <p>Use the tools below to sketch the floorplan you would like to generate. Our Architect will understand but feel free to add text instructions to complicated drawings. Use the Hand tool to navigate around, or scroll to zoom in/out for precise work.</p>
   </div>
   
   <!-- Hidden <img> for background loading -->
@@ -20,18 +20,19 @@
   
   <!-- Tool Panel -->
   <div class="tool-panel">
-    <button id="pen-tool" class="tool-btn active">Pen</button>
-    <button id="eraser-tool" class="tool-btn">Eraser</button>
-    <button id="line-tool" class="tool-btn">Line</button>
-    <button id="text-tool" class="tool-btn">Text</button>
-    <button id="select-tool" class="tool-btn">Select</button>
-    
     <div class="color-options">
       <button id="red-color" class="color-btn active" data-color="#FF0000"></button>
       <button id="green-color" class="color-btn" data-color="#00FF00"></button>
       <button id="blue-color" class="color-btn" data-color="#0000FF"></button>
       <label>Custom: <input type="color" id="color-picker" value="#FF0000"></label>
     </div>
+    
+    <button id="pen-tool" class="tool-btn active">Pen</button>
+    <button id="eraser-tool" class="tool-btn">Eraser</button>
+    <button id="line-tool" class="tool-btn">Line</button>
+    <button id="text-tool" class="tool-btn">Text</button>
+    <button id="labels-tool" class="tool-btn">Labels</button>
+    <button id="select-tool" class="tool-btn">Select</button>
     
     <!-- Brush size control - for pen and eraser -->
     <div id="brush-controls" class="tool-controls">
@@ -50,15 +51,48 @@
       </label>
     </div>
     
+    <!-- Labels control - only shown when labels tool is active -->
+    <div id="labels-controls" class="tool-controls" style="display: none;">
+      <label>Room Label: 
+        <select id="label-select">
+          <option value="Office">Office</option>
+          <option value="Conference">Conference</option>
+          <option value="Break">Break</option>
+          <option value="Bathroom">Bathroom</option>
+          <option value="Open Work Space">Open Work Space</option>
+        </select>
+      </label>
+    </div>
+    
     <button id="undo-btn" class="action-btn">Undo</button>
     <button id="clear-btn" class="action-btn warning">Clear Canvas</button>
-    <button id="save-btn" class="action-btn primary">Save Sketch</button>
-    <a href="<%= floorplan_path(@floorplan) %>" class="action-btn">Cancel</a>
+    
+    <!-- Zoom controls -->
+    <div class="zoom-controls">
+      <button id="zoom-in-btn" class="action-btn">Zoom In</button>
+      <button id="zoom-out-btn" class="action-btn">Zoom Out</button>
+      <button id="zoom-reset-btn" class="action-btn">Reset Zoom</button>
+      <span id="zoom-level">100%</span>
+    </div>
+    
+    <button id="hand-tool" class="action-btn">Hand</button>
+  </div>
+  
+  <!-- Generate button - prominently placed below tools -->
+  <div class="generate-section">
+    <button id="save-btn" class="generate-btn">🏗️ Generate My Floorplan!</button>
+    <p class="generate-help">Ready to see your floorplan? Click above to send your sketch to our AI Architect!</p>
   </div>
   
   <div id="status-message" style="margin-top: 10px; padding: 8px; background-color: #f8f9fa; border: 1px solid #ddd; display: none;"></div>
   
   <style>
+    .sketch-info.alert.alert-info {
+      background-color: #d4f5d4 !important;
+      border-color: #a8e6a8 !important;
+      color: #2d5a2d !important;
+    }
+    
     .canvas-container {
       margin: 20px 0;
       border: 1px solid #ddd;
@@ -98,6 +132,18 @@
     
     .text-active #floorplan-canvas {
       cursor: text;
+    }
+    
+    .labels-active #floorplan-canvas {
+      cursor: pointer;
+    }
+    
+    .hand-active #floorplan-canvas {
+      cursor: grab;
+    }
+    
+    .hand-active #floorplan-canvas:active {
+      cursor: grabbing;
     }
     
     .select-active #floorplan-canvas {
@@ -186,6 +232,63 @@
     #blue-color {
       background-color: #0000FF;
     }
+    
+    .zoom-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 0 10px;
+    }
+    
+    #zoom-level {
+      font-size: 12px;
+      color: #6c757d;
+      margin-left: 5px;
+      min-width: 35px;
+    }
+    
+    .generate-section {
+      margin: 25px 0;
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    .generate-btn {
+      font-size: 24px;
+      font-weight: bold;
+      padding: 18px 40px;
+      background: linear-gradient(45deg, #28a745, #20c997);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      min-width: 320px;
+    }
+    
+    .generate-btn:hover {
+      background: linear-gradient(45deg, #218838, #1ea078);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+    }
+    
+    .generate-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(40, 167, 69, 0.4);
+    }
+    
+    .generate-help {
+      color: white;
+      margin: 15px 0 0 0;
+      font-size: 16px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
   </style>
 
   <!-- Inline script for canvas initialization -->
@@ -261,6 +364,7 @@
       const eraserTool = document.getElementById('eraser-tool');
       const lineTool = document.getElementById('line-tool');
       const textTool = document.getElementById('text-tool');
+      const labelsTool = document.getElementById('labels-tool');
       const selectTool = document.getElementById('select-tool');
       const undoBtn = document.getElementById('undo-btn');
       const clearBtn = document.getElementById('clear-btn');
@@ -268,6 +372,23 @@
       const colorPicker = document.getElementById('color-picker');
       const sizeSlider = document.getElementById('size-slider');
       const sizeValue = document.getElementById('size-value');
+      const handTool = document.getElementById('hand-tool');
+      
+      // Debug: Check if tools are found
+      console.log('Tools found:');
+      console.log('- penTool:', !!penTool);
+      console.log('- eraserTool:', !!eraserTool);
+      console.log('- lineTool:', !!lineTool);
+      console.log('- textTool:', !!textTool);
+      console.log('- labelsTool:', !!labelsTool);
+      console.log('- selectTool:', !!selectTool);
+      console.log('- handTool:', !!handTool);
+      
+      // Zoom controls
+      const zoomInBtn = document.getElementById('zoom-in-btn');
+      const zoomOutBtn = document.getElementById('zoom-out-btn');
+      const zoomResetBtn = document.getElementById('zoom-reset-btn');
+      const zoomLevel = document.getElementById('zoom-level');
       
       // Color buttons
       const redColorBtn = document.getElementById('red-color');
@@ -278,7 +399,7 @@
       const objectHistory = [];
       
       // Flags to track mode
-      let currentMode = 'pen'; // Default mode: 'pen', 'eraser', 'text', 'select', 'line'
+      let currentMode = 'pen'; // Default mode: 'pen', 'eraser', 'text', 'labels', 'hand', 'select', 'line'
       
       // Variables for text editing
       let isEditing = false;
@@ -291,9 +412,18 @@
       let startPoint = null;
       let lineObject = null;
       
+      // Zoom variables
+      let currentZoom = 1.0;
+      const minZoom = 0.1;
+      const maxZoom = 5.0;
+      const zoomStep = 0.1;
+      let isPanning = false;
+      let lastPosX = 0;
+      let lastPosY = 0;
+      
       // Helper function to set active button
       function setActiveButton(button) {
-        const toolButtons = document.querySelectorAll('.tool-btn');
+        const toolButtons = document.querySelectorAll('.tool-btn, .action-btn');
         toolButtons.forEach(btn => {
           btn.classList.remove('active');
         });
@@ -304,7 +434,7 @@
         const canvasContainer = canvasEl.parentElement;
         
         // Remove all tool-specific classes
-        canvasContainer.classList.remove('pen-active', 'eraser-active', 'line-active', 'text-active', 'select-active');
+        canvasContainer.classList.remove('pen-active', 'eraser-active', 'line-active', 'text-active', 'labels-active', 'hand-active', 'select-active');
         
         // Add class based on current tool
         if (button.id === 'pen-tool') {
@@ -315,6 +445,10 @@
           canvasContainer.classList.add('line-active');
         } else if (button.id === 'text-tool') {
           canvasContainer.classList.add('text-active');
+        } else if (button.id === 'labels-tool') {
+          canvasContainer.classList.add('labels-active');
+        } else if (button.id === 'hand-tool') {
+          canvasContainer.classList.add('hand-active');
         } else if (button.id === 'select-tool') {
           canvasContainer.classList.add('select-active');
         }
@@ -324,14 +458,18 @@
       function showToolControls(toolType) {
         const brushControls = document.getElementById('brush-controls');
         const textControls = document.getElementById('text-controls');
+        const labelsControls = document.getElementById('labels-controls');
         
         brushControls.style.display = 'none';
         textControls.style.display = 'none';
+        labelsControls.style.display = 'none';
         
         if (toolType === 'pen' || toolType === 'eraser' || toolType === 'line') {
           brushControls.style.display = 'block';
         } else if (toolType === 'text') {
           textControls.style.display = 'block';
+        } else if (toolType === 'labels') {
+          labelsControls.style.display = 'block';
         }
         
         // Show/hide custom cursor for eraser
@@ -368,82 +506,34 @@
         customCursor.style.height = adjustedSize + 'px';
       }
       
-      // Remove existing mouse:down handlers
+      // Zoom utility functions
+      function updateZoomLevel() {
+        const percentage = Math.round(currentZoom * 100);
+        if (zoomLevel) {
+          zoomLevel.textContent = percentage + '%';
+        }
+      }
+      
+      function setZoom(zoom) {
+        // Clamp zoom to limits
+        zoom = Math.max(minZoom, Math.min(maxZoom, zoom));
+        
+        // Update canvas zoom
+        canvas.setZoom(zoom);
+        currentZoom = zoom;
+        updateZoomLevel();
+        
+        // Update zoom button states
+        if (zoomInBtn) zoomInBtn.disabled = (zoom >= maxZoom);
+        if (zoomOutBtn) zoomOutBtn.disabled = (zoom <= minZoom);
+        
+        // Ensure canvas renders properly
+        canvas.renderAll();
+        
+        console.log('Zoom set to:', zoom);
+      }
+      
       canvas.off('mouse:down');
-      
-      // Add canvas click handler
-      canvas.on('mouse:down', function(options) {
-        if (currentMode === 'text' && !options.target) {
-          // Start text editing at click position
-          startTextEditing(options.pointer);
-        } else if (currentMode === 'line') {
-          if (!isDrawingLine) {
-            // Start drawing line
-            isDrawingLine = true;
-            startPoint = options.pointer;
-            
-            // Get current color
-            let currentColor = colorPicker ? colorPicker.value : '#FF0000';
-            
-            // Create a temporary line to show as preview
-            lineObject = new fabric.Line(
-              [startPoint.x, startPoint.y, startPoint.x, startPoint.y], 
-              {
-                stroke: currentColor,
-                strokeWidth: sizeSlider ? parseInt(sizeSlider.value) : 3,
-                selectable: false
-              }
-            );
-            canvas.add(lineObject);
-            
-            console.log('Started line at', startPoint, 'with color', currentColor);
-          } else {
-            // Finish drawing line
-            isDrawingLine = false;
-            startPoint = null;
-            
-            // Add the final line to history for undo
-            if (lineObject) {
-              objectHistory.push(lineObject);
-              
-              // Enable the undo button
-              if (undoBtn) {
-                undoBtn.disabled = false;
-              }
-              
-              console.log('Completed line');
-            }
-          }
-        }
-      });
-      
-      // Mouse move event for cursor positioning and line preview
-      canvas.on('mouse:move', function(options) {
-        const customCursor = document.getElementById('custom-cursor');
-        if (!customCursor) return;
-        
-        const pointer = options.pointer;
-        
-        // Only update cursor if it's visible (eraser mode)
-        if (customCursor.style.display === 'block') {
-          // Get actual mouse coordinates from the event
-          const mouseEvent = options.e;
-          
-          // Position the cursor at the actual mouse position
-          customCursor.style.left = mouseEvent.clientX + 'px';
-          customCursor.style.top = mouseEvent.clientY + 'px';
-        }
-        
-        // Update line preview if we're drawing a line
-        if (currentMode === 'line' && isDrawingLine && lineObject && startPoint) {
-          // Update the end point of the line as the mouse moves
-          lineObject.set({
-            x2: pointer.x,
-            y2: pointer.y
-          });
-          canvas.renderAll();
-        }
-      });
       
       // Allow double-click to edit text
       canvas.on('mouse:dblclick', function(options) {
@@ -549,6 +639,31 @@
           });
         });
       }
+      
+      // Zoom button handlers
+      if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', () => {
+          setZoom(currentZoom + zoomStep);
+        });
+      }
+      
+      if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', () => {
+          setZoom(currentZoom - zoomStep);
+        });
+      }
+      
+      if (zoomResetBtn) {
+        zoomResetBtn.addEventListener('click', () => {
+          setZoom(1.0);
+          // Reset pan position to center
+          canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+          canvas.renderAll();
+        });
+      }
+      
+      // Initialize zoom level display
+      updateZoomLevel();
       
       // Function to apply selected color
       function applySelectedColor(color) {
@@ -703,6 +818,38 @@
         canvas.wrapperEl.focus();
         
         console.log('Text editing started');
+      }
+      
+      // Function to place a label at a specific position
+      function placeLabelAtPosition(pointer) {
+        const labelSelect = document.getElementById('label-select');
+        const labelText = labelSelect ? labelSelect.value : 'Office';
+        
+        // Create a new label text object
+        const labelObj = new fabric.Text(labelText, {
+          left: pointer.x,
+          top: pointer.y,
+          fill: colorPicker ? colorPicker.value : '#000000',
+          fontSize: 15, // Small font size for labels
+          selectable: true,
+          editable: false, // Labels are not editable
+          backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent white background
+          padding: 4 // Add some padding around the text
+        });
+        
+        // Add to canvas and track in history
+        canvas.add(labelObj);
+        canvas.renderAll();
+        
+        // Add to history for undo
+        objectHistory.push(labelObj);
+        
+        // Enable the undo button
+        if (undoBtn) {
+          undoBtn.disabled = false;
+        }
+        
+        console.log('Label placed:', labelText);
       }
       
       // Function to update text with or without cursor
@@ -919,6 +1066,8 @@
       // Line tool
       if (lineTool) {
         lineTool.addEventListener('click', () => {
+          console.log('Line tool button clicked!');
+          
           // Commit any ongoing text editing
           if (isEditing) {
             commitTextEditing();
@@ -935,8 +1084,10 @@
           
           setActiveButton(lineTool);
           showToolControls('line');
-          console.log('Line tool selected');
+          console.log('Line tool selected - currentMode:', currentMode);
         });
+      } else {
+        console.error('Line tool button not found!');
       }
       
       // Text tool
@@ -959,6 +1110,52 @@
           setActiveButton(textTool);
           showToolControls('text');
           console.log('Text tool selected - Click to add text');
+        });
+      }
+      
+      // Labels tool
+      if (labelsTool) {
+        labelsTool.addEventListener('click', () => {
+          // Commit any ongoing text editing
+          if (isEditing) {
+            commitTextEditing();
+          }
+          
+          currentMode = 'labels';
+          canvas.isDrawingMode = false;
+          canvas.selection = false;  // Disable selection in labels mode
+          
+          // Make all objects non-selectable in labels mode
+          canvas.forEachObject(function(obj) {
+            obj.selectable = false;
+          });
+          
+          setActiveButton(labelsTool);
+          showToolControls('labels');
+          console.log('Labels tool selected');
+        });
+      }
+      
+      // Hand tool
+      if (handTool) {
+        handTool.addEventListener('click', () => {
+          // Commit any ongoing text editing
+          if (isEditing) {
+            commitTextEditing();
+          }
+          
+          currentMode = 'hand';
+          canvas.isDrawingMode = false;
+          canvas.selection = false;  // Disable selection in hand mode
+          
+          // Make all objects non-selectable in hand mode
+          canvas.forEachObject(function(obj) {
+            obj.selectable = false;
+          });
+          
+          setActiveButton(handTool);
+          showToolControls('hand');
+          console.log('Hand tool selected - Drag to pan around');
         });
       }
       
@@ -1129,6 +1326,126 @@
             console.log('Object deleted');
           }
         }
+      });
+      
+      // Mouse wheel zoom
+      canvas.on('mouse:wheel', function(opt) {
+        var delta = opt.e.deltaY;
+        var zoom = canvas.getZoom();
+        
+        // Calculate new zoom level
+        zoom *= 0.999 ** delta;
+        
+        // Clamp to limits
+        zoom = Math.max(minZoom, Math.min(maxZoom, zoom));
+        
+        // Apply zoom
+        canvas.setZoom(zoom);
+        currentZoom = zoom;
+        updateZoomLevel();
+        
+        // Update zoom button states
+        if (zoomInBtn) zoomInBtn.disabled = (zoom >= maxZoom);
+        if (zoomOutBtn) zoomOutBtn.disabled = (zoom <= minZoom);
+        
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+      });
+      
+      // Pan functionality for when zoomed in or when using hand tool
+      canvas.on('mouse:down', function(opt) {
+        console.log('Mouse down - currentMode:', currentMode, 'target:', opt.target ? opt.target.type : 'none');
+        
+        // Handle existing tool functionality first
+        if (currentMode === 'text' && !opt.target) {
+          startTextEditing(opt.pointer);
+          return;
+        } else if (currentMode === 'labels' && !opt.target) {
+          placeLabelAtPosition(opt.pointer);
+          return;
+        } else if (currentMode === 'line') {
+          console.log('Mouse down in line mode, isDrawingLine:', isDrawingLine);
+          // Handle line drawing...
+          if (!isDrawingLine) {
+            isDrawingLine = true;
+            startPoint = opt.pointer;
+            
+            let currentColor = colorPicker ? colorPicker.value : '#FF0000';
+            
+            lineObject = new fabric.Line(
+              [startPoint.x, startPoint.y, startPoint.x, startPoint.y], 
+              {
+                stroke: currentColor,
+                strokeWidth: sizeSlider ? parseInt(sizeSlider.value) : 3,
+                selectable: false
+              }
+            );
+            canvas.add(lineObject);
+            
+            console.log('Started line at', startPoint, 'with color', currentColor);
+          } else {
+            isDrawingLine = false;
+            startPoint = null;
+            
+            if (lineObject) {
+              objectHistory.push(lineObject);
+              
+              if (undoBtn) {
+                undoBtn.disabled = false;
+              }
+              
+              console.log('Completed line');
+            }
+          }
+          return;
+        }
+        
+        // Pan functionality for when zoomed in or when using hand tool
+        if ((currentZoom > 1.0 && (opt.e.ctrlKey || opt.e.metaKey || currentMode === 'select')) || currentMode === 'hand') {
+          isPanning = true;
+          lastPosX = opt.e.clientX;
+          lastPosY = opt.e.clientY;
+          canvas.selection = false;
+        }
+      });
+      
+      canvas.on('mouse:move', function(opt) {
+        // Handle existing cursor functionality
+        const customCursor = document.getElementById('custom-cursor');
+        if (customCursor) {
+          const pointer = opt.pointer;
+          
+          if (customCursor.style.display === 'block') {
+            const mouseEvent = opt.e;
+            customCursor.style.left = mouseEvent.clientX + 'px';
+            customCursor.style.top = mouseEvent.clientY + 'px';
+          }
+          
+          // Update line preview if we're drawing a line
+          if (currentMode === 'line' && isDrawingLine && lineObject && startPoint) {
+            console.log('Updating line preview to:', pointer.x, pointer.y);
+            lineObject.set({
+              x2: pointer.x,
+              y2: pointer.y
+            });
+            canvas.renderAll();
+          }
+        }
+        
+        // Handle panning
+        if (isPanning && opt.e) {
+          const vpt = canvas.viewportTransform;
+          vpt[4] += opt.e.clientX - lastPosX;
+          vpt[5] += opt.e.clientY - lastPosY;
+          canvas.requestRenderAll();
+          lastPosX = opt.e.clientX;
+          lastPosY = opt.e.clientY;
+        }
+      });
+      
+      canvas.on('mouse:up', function(opt) {
+        isPanning = false;
+        canvas.selection = currentMode === 'select';
       });
     }
   </script>
