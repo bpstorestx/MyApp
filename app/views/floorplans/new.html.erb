@@ -17,12 +17,132 @@
     <%= form.file_field :original_image, accept: 'image/*' %>
   </div>
 
-  <div class="field">
-    <%= form.check_box :sketch_after_upload, id: 'sketch_checkbox' %>
-    <%= form.label :sketch_after_upload, "Sketch on your floorplan for master architect design assistance (Sketched Prompting)" %>
+  <div class="generation-options">
+    <h3>How would you like to generate your floorplan?</h3>
+    <p class="options-help">Choose the option that best fits your needs:</p>
+    
+    <div class="option-group">
+      <%= form.radio_button :generation_type, "immediate", id: "immediate_generation", checked: true %>
+      <%= form.label :generation_type_immediate, "Generate Immediately", class: "option-label" %>
+      <p class="option-description">Use our standard AI prompt to create a professional office layout right away.</p>
+    </div>
+    
+    <div class="option-group">
+      <%= form.radio_button :generation_type, "custom_prompt", id: "custom_generation" %>
+      <%= form.label :generation_type_custom_prompt, "Add Custom Instructions", class: "option-label" %>
+      <p class="option-description">Provide specific requirements and preferences before generating your floorplan.</p>
+    </div>
+    
+    <div class="option-group">
+      <%= form.radio_button :generation_type, "sketch", id: "sketch_generation" %>
+      <%= form.label :generation_type_sketch, "Sketch & Customize", class: "option-label" %>
+      <p class="option-description">Draw on your floorplan and add custom instructions for maximum control.</p>
+    </div>
   </div>
 
   <div class="actions">
     <%= form.submit "Upload Floorplan" %>
   </div>
-<% end %> 
+<% end %>
+
+<style>
+  .generation-options {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+  }
+  
+  .generation-options h3 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  .options-help {
+    color: #6c757d;
+    margin: 0 0 20px 0;
+    font-size: 14px;
+  }
+  
+  .option-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background-color: white;
+    transition: all 0.2s ease;
+  }
+  
+  .option-group:hover {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.1);
+  }
+  
+  .option-group input[type="radio"]:checked + .option-label {
+    color: #0d6efd;
+    font-weight: 600;
+  }
+  
+  .option-group input[type="radio"]:checked {
+    accent-color: #0d6efd;
+  }
+  
+  .option-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 5px 0 8px 25px;
+    cursor: pointer;
+  }
+  
+  .option-description {
+    margin: 0 0 0 25px;
+    color: #6c757d;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  .field {
+    margin-bottom: 20px;
+  }
+  
+  .field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+  }
+  
+  .field input[type="file"] {
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .actions {
+    margin-top: 30px;
+  }
+  
+  .actions input[type="submit"] {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .actions input[type="submit"]:hover {
+    background: linear-gradient(45deg, #218838, #1ea078);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  }
+</style> 

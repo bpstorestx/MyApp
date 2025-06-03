@@ -33,23 +33,38 @@ Things you may want to cover:
 
 ### Prompting Strategies
 
-The application uses two different prompting strategies when generating floorplans with OpenAI:
+The application offers three different generation approaches when uploading floorplans:
 
-1. **Standard Prompting** - Used when a floorplan is uploaded without sketching
-   * Creates a clean, top-down architectural image of a professional office layout
-   * Includes a large open common area in the center and private offices along the perimeter
+1. **Generate Immediately** - Quick generation with standard prompting
+   * Uses our default AI prompt to create a professional office layout
+   * Creates a clean, top-down architectural image with open common areas and perimeter offices
    * Maintains the original outline with the same windows and entry points
    * Blueprint-like, lease-ready style
 
-2. **Sketched Prompting** - Used when the "Sketch on your floorplan for CAD-style architectural design" checkbox is selected
-   * Positions the AI as a master architect specializing in modern efficient office space design
-   * Emphasizes workspace flow with doors and open layout for efficiency
-   * Frames the AI as advising a commercial real estate client
-   * Preserves exterior walls and doors
-   * Uses the client's sketched lines and text notes to generate an updated floorplan
+2. **Add Custom Instructions** - Standard generation enhanced with user requirements
+   * Allows users to specify detailed requirements before generation
+   * Combines the standard architectural prompt with custom user instructions
+   * Perfect for specific office needs without requiring sketching skills
+   * Examples: "Need 6 private offices, large conference room, reception area"
 
-To use Sketched Prompting:
+3. **Sketch & Customize** - Advanced design with drawing tools and custom instructions
+   * Positions the AI as a master architect specializing in modern efficient office space design
+   * Users can draw RED modifications directly on their floorplan
+   * Supports both sketched annotations AND custom text instructions
+   * Preserves exterior walls and doors while incorporating user modifications
+   * Most comprehensive option for detailed customization
+
+### Custom Prompt Feature
+
+Both the "Add Custom Instructions" and "Sketch & Customize" options support detailed custom prompts:
+* Saved to the database and displayed on the results page
+* Integrated into the AI generation process
+* Examples: room counts, special requirements, accessibility needs, etc.
+* Enhances rather than replaces the base architectural prompts
+
+To use Custom Instructions:
 1. Upload a floorplan image
-2. Check the "Sketch on your floorplan for CAD-style architectural design (Sketched Prompting)" option
-3. Use the drawing tools to sketch your desired floor plan layout
-4. Save the sketch to generate the CAD-style architectural floorplan
+2. Select "Add Custom Instructions" or "Sketch & Customize"
+3. Enter your specific requirements in the text area
+4. For sketching: Use the drawing tools to add visual modifications
+5. Generate your customized floorplan

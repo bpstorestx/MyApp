@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_02_210904) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_03_142007) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -50,6 +50,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_02_210904) do
     t.bigint "user_id"
     t.boolean "use_annotated_image", default: false
     t.text "sketch_data"
+    t.text "custom_prompt"
     t.index ["user_id"], name: "index_floorplans_on_user_id"
   end
 

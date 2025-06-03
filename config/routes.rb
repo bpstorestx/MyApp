@@ -30,6 +30,8 @@ Rails.application.routes.draw do
     member do
       get :sketch
       post :save_sketch
+      get :custom_prompt
+      post :save_custom_prompt
     end
     get :my_floorplans, on: :collection
   end

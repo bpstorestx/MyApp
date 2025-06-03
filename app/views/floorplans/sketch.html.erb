@@ -79,6 +79,23 @@
   </div>
   
   <!-- Generate button - prominently placed below tools -->
+  <div class="custom-prompt-section">
+    <h3>Custom Instructions (Optional)</h3>
+    <p class="prompt-help">Add specific instructions or requirements for your floorplan generation.</p>
+    
+    <div class="examples-section">
+      <h4>💡 Example Instructions:</h4>
+      <ul class="examples-list">
+        <li>"Focus on tangible layout design. Open vs closed. Specific numbers. Listing Exact Rooms Required."</li>
+        <li>"I need 6 private offices along the perimeter, a large conference room, and an open workspace in the center."</li>
+        <li>"Place two private offices near the entrance, cluster four workstations in a loose grid in the middle, and situate a small meeting room and kitchenette in the back corner."</li>
+        <li>"A mostly open layout with six desks in the center, two enclosed offices along the window wall, a single conference room adjacent to the reception area, and a break area at the far end."</li>
+      </ul>
+    </div>
+    
+    <textarea id="custom-prompt" placeholder="Example: I need 4 private offices, a large conference room, and an open workspace area. The conference room should be located near the entrance..." rows="4"></textarea>
+  </div>
+  
   <div class="generate-section">
     <button id="save-btn" class="generate-btn">🏗️ Generate My Floorplan!</button>
     <p class="generate-help">Ready to see your floorplan? Click above to send your sketch to our AI Architect!</p>
@@ -245,6 +262,77 @@
       color: #6c757d;
       margin-left: 5px;
       min-width: 35px;
+    }
+    
+    .custom-prompt-section {
+      margin: 20px 0;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+    }
+    
+    .custom-prompt-section h3 {
+      margin: 0 0 10px 0;
+      color: #495057;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .prompt-help {
+      color: #6c757d;
+      margin: 0 0 15px 0;
+      font-size: 14px;
+    }
+    
+    .examples-section {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #e7f3ff;
+      border: 1px solid #b8daff;
+      border-radius: 6px;
+    }
+    
+    .examples-section h4 {
+      margin: 0 0 10px 0;
+      color: #0c5460;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .examples-list {
+      margin: 0;
+      padding-left: 20px;
+      color: #0c5460;
+    }
+    
+    .examples-list li {
+      margin-bottom: 8px;
+      font-style: italic;
+      line-height: 1.4;
+    }
+    
+    #custom-prompt {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    
+    #custom-prompt:focus {
+      outline: none;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    #custom-prompt::placeholder {
+      color: #adb5bd;
     }
     
     .generate-section {
@@ -1254,6 +1342,10 @@
             // Convert canvas to JSON
             const canvasData = JSON.stringify(canvas.toJSON());
             
+            // Get custom prompt value
+            const customPromptElement = document.getElementById('custom-prompt');
+            const customPrompt = customPromptElement ? customPromptElement.value.trim() : '';
+            
             // Send data to the server
             fetch('<%= save_sketch_floorplan_path(@floorplan) %>', {
               method: 'POST',
@@ -1263,7 +1355,8 @@
               },
               body: JSON.stringify({ 
                 sketch_data: canvasData, 
-                sketch_image: canvas.toDataURL('image/png') 
+                sketch_image: canvas.toDataURL('image/png'),
+                custom_prompt: customPrompt
               })
             })
             .then(response => {

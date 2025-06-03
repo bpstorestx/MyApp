@@ -44,6 +44,28 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+  
+  .custom-prompt-display {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+  }
+  
+  .custom-prompt-display h3 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .custom-prompt-text {
+    margin: 0;
+    color: #6c757d;
+    font-style: italic;
+    line-height: 1.5;
+  }
 </style>
 
 <h1>Floorplan Details</h1>
@@ -69,7 +91,7 @@
     <% if @floorplan.status == 'completed' && @floorplan.generated_image.attached? %>
       <p class="text-muted">AI-generated professional floorplan</p>
       <%= image_tag @floorplan.generated_image, class: "floorplan-image" %>
-    <% elsif @floorplan.status == 'sketch_submitted' || @floorplan.status == 'pending' || @floorplan.status == 'processing' %>
+    <% elsif @floorplan.status == 'sketch_submitted' || @floorplan.status == 'custom_prompt_submitted' || @floorplan.status == 'pending' || @floorplan.status == 'processing' %>
       <div class="processing-status">
         <p>Your floorplan is currently being processed...</p>
         <div class="progress-indicator">
@@ -86,6 +108,13 @@
   <div class="status">
     <strong>Status:</strong> <%= @floorplan.status %>
   </div>
+  
+  <% if @floorplan.custom_prompt.present? %>
+    <div class="custom-prompt-display">
+      <h3>Custom Instructions Used:</h3>
+      <p class="custom-prompt-text"><%= @floorplan.custom_prompt %></p>
+    </div>
+  <% end %>
 </div>
 
 <div class="action-links">

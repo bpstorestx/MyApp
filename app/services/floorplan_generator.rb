@@ -81,7 +81,27 @@ class FloorplanGenerator
       # Add prompt parameter
       post_body << "--#{boundary}\r\n"
       post_body << "Content-Disposition: form-data; name=\"prompt\"\r\n\r\n"
-      post_body << "Convert this into a clean, top-down architectural image of a professional office layout. Include a large open common area in the center and private offices along the perimeter. Keep the outline the same with the same windows and entry points. Exclude bathrooms, furniture, and decorations. Style should be blueprint-like and lease-ready.\r\n"
+      
+      # Build the base prompt for standard generation with ENHANCED perimeter constraints
+      base_prompt = "🚨 ABSOLUTE RULE: NEVER MODIFY PERIMETER WALLS OR EXTERIOR DOORS 🚨
+
+BUILDING STRUCTURE CONSTRAINT: The exterior boundary represents permanent concrete/steel structure that CANNOT be changed. Think of this like renovating the INSIDE of an existing building - the shell is built and immutable.
+
+SHAPE PRESERVATION CRITICAL: If the building is L-shaped, it MUST remain L-shaped. If rectangular, it MUST remain rectangular. If it has courtyards or cutouts, these MUST be preserved exactly. The building footprint and dimensions are FIXED and UNCHANGEABLE.
+
+FORBIDDEN ACTIONS: Moving exterior walls, changing building shape, altering entry points, modifying building footprint, changing perimeter dimensions.
+
+ALLOWED SCOPE: Only interior walls, room layouts, and internal space planning within the existing perimeter.
+
+Now convert this into a clean, top-down architectural image of a professional office layout. Include a large open common area in the center and private offices along the perimeter. Exclude bathrooms, furniture, and decorations. Style should be blueprint-like and lease-ready"
+      
+      # Add custom prompt if available
+      if @floorplan.custom_prompt.present?
+        base_prompt += " with these specific requirements: #{@floorplan.custom_prompt}"
+      end
+      
+      # Ensure proper encoding for multipart form data
+      post_body << (base_prompt + ".\r\n").force_encoding('ASCII-8BIT')
       
       # Add closing boundary
       post_body << "--#{boundary}--\r\n"
@@ -167,13 +187,29 @@ class FloorplanGenerator
       # Add prompt parameter
       post_body << "--#{boundary}\r\n"
       post_body << "Content-Disposition: form-data; name=\"prompt\"\r\n\r\n"
-      post_body << "Office space architect: Client has sketched RED modifications on their floorplan. Incorporate all RED sketched lines and text instructions into a professional floorplan. Convert RED lines to BLACK in final design. Remove all RED text annotations. Do not modify exterior walls or doors. Generate an efficient and walkable office floorplan"
+      
+      # Build the enhanced sketch base prompt with STRONGER perimeter constraints
+      base_prompt = "🚨 ABSOLUTE RULE: NEVER MODIFY PERIMETER WALLS OR EXTERIOR DOORS 🚨
+
+BUILDING STRUCTURE CONSTRAINT: The exterior boundary represents permanent concrete/steel structure that CANNOT be changed. You are an interior architect working ONLY within the fixed shell of the building.
+
+SHAPE PRESERVATION CRITICAL: The building outline MUST remain exactly the same. If L-shaped, stay L-shaped. If rectangular, stay rectangular. Preserve all exterior corners and angles exactly.
+
+Office space architect: Client has sketched RED modifications on their floorplan. FORBIDDEN: Moving any perimeter walls or exterior doors. ALLOWED: Only redesign interior space within existing perimeter walls. Incorporate all RED sketched lines and text instructions into a professional floorplan. Convert RED lines to BLACK in final design. Remove all RED text annotations. Generate an efficient and walkable office floorplan"
+      
+      # Add custom prompt if available
+      if @floorplan.custom_prompt.present?
+        base_prompt += " with these specific requirements: #{@floorplan.custom_prompt}"
+      end
+      
+      # Ensure proper encoding for multipart form data
+      post_body << base_prompt.force_encoding('ASCII-8BIT')
       
       # Add text elements from the sketch if available
       if text_elements.any?
-        post_body << " including these text annotations: #{text_elements.join(', ')}.\r\n"
+        post_body << " including these text annotations: #{text_elements.join(', ')}.\r\n".force_encoding('ASCII-8BIT')
       else
-        post_body << ".\r\n"
+        post_body << ".\r\n".force_encoding('ASCII-8BIT')
       end
       
       # Add closing boundary

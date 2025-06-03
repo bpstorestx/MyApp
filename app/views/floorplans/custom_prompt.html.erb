@@ -1,0 +1,232 @@
+<h1>Add Custom Instructions</h1>
+
+<% if @floorplan.original_image.attached? %>
+  <div class="prompt-info alert alert-info">
+    <p>Your floorplan has been uploaded successfully! Add specific instructions below to customize how our AI architect generates your professional office layout.</p>
+  </div>
+  
+  <!-- Display the uploaded floorplan -->
+  <div class="original-floorplan">
+    <h2>Your Uploaded Floorplan</h2>
+    <%= image_tag @floorplan.original_image, class: "floorplan-preview" %>
+  </div>
+  
+  <!-- Custom Instructions Form -->
+  <%= form_with url: save_custom_prompt_floorplan_path(@floorplan), method: :post, local: true do |form| %>
+    <div class="custom-prompt-section">
+      <h3>Custom Instructions</h3>
+      <p class="prompt-help">Describe your specific requirements, preferences, or any special considerations for your office layout.</p>
+      
+      <div class="examples-section">
+        <h4>💡 Example Instructions:</h4>
+        <ul class="examples-list">
+          <li>"Focus on tangible layout design. Open vs closed. Specific numbers. Listing Exact Rooms Required."</li>
+          <li>"I need 6 private offices along the perimeter, a large conference room, and an open workspace in the center."</li>
+          <li>"Place two private offices near the entrance, cluster four workstations in a loose grid in the middle, and situate a small meeting room and kitchenette in the back corner."</li>
+          <li>"A mostly open layout with six desks in the center, two enclosed offices along the window wall, a single conference room adjacent to the reception area, and a break area at the far end."</li>
+        </ul>
+      </div>
+      
+      <%= form.text_area :custom_prompt, 
+          placeholder: "Example: I need 4 private offices, a large conference room near the entrance, an open workspace area for 15 people, a break room, and a reception area. Please ensure good natural light distribution and easy navigation between areas...", 
+          rows: 6,
+          required: true %>
+    </div>
+    
+    <div class="actions-section">
+      <%= form.submit "🏗️ Generate My Custom Floorplan", class: "generate-btn" %>
+      <p class="generate-help">Your custom floorplan will be generated based on your instructions and the uploaded layout.</p>
+      
+      <div class="alternative-actions">
+        <%= link_to "Skip and Generate with Standard Settings", @floorplan, 
+            class: "skip-btn", 
+            data: { 
+              method: :patch, 
+              params: { floorplan: { status: 'pending' } },
+              confirm: "This will generate your floorplan using our standard office layout. Continue?" 
+            } %>
+        <span class="separator">or</span>
+        <%= link_to "Go Back to Upload", new_floorplan_path, class: "back-btn" %>
+      </div>
+    </div>
+  <% end %>
+  
+  <style>
+    .prompt-info.alert.alert-info {
+      background-color: #d4edda !important;
+      border-color: #c3e6cb !important;
+      color: #155724 !important;
+    }
+    
+    .original-floorplan {
+      margin: 20px 0;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .original-floorplan h2 {
+      margin: 0 0 15px 0;
+      color: #495057;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .floorplan-preview {
+      max-width: 100%;
+      max-height: 400px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .custom-prompt-section {
+      margin: 30px 0;
+      padding: 25px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+    }
+    
+    .custom-prompt-section h3 {
+      margin: 0 0 10px 0;
+      color: #495057;
+      font-size: 20px;
+      font-weight: 600;
+    }
+    
+    .prompt-help {
+      color: #6c757d;
+      margin: 0 0 20px 0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .examples-section {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #e7f3ff;
+      border: 1px solid #b8daff;
+      border-radius: 6px;
+    }
+    
+    .examples-section h4 {
+      margin: 0 0 10px 0;
+      color: #0c5460;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .examples-list {
+      margin: 0;
+      padding-left: 20px;
+      color: #0c5460;
+    }
+    
+    .examples-list li {
+      margin-bottom: 8px;
+      font-style: italic;
+      line-height: 1.4;
+    }
+    
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 15px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    textarea::placeholder {
+      color: #adb5bd;
+      font-style: italic;
+    }
+    
+    .actions-section {
+      margin: 30px 0;
+      text-align: center;
+    }
+    
+    .generate-btn {
+      font-size: 22px;
+      font-weight: bold;
+      padding: 18px 40px;
+      background: linear-gradient(45deg, #28a745, #20c997);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      min-width: 320px;
+      display: block;
+      margin: 0 auto;
+    }
+    
+    .generate-btn:hover {
+      background: linear-gradient(45deg, #218838, #1ea078);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
+    }
+    
+    .generate-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px rgba(40, 167, 69, 0.4);
+    }
+    
+    .generate-help {
+      color: #6c757d;
+      margin: 15px 0 25px 0;
+      font-size: 14px;
+    }
+    
+    .alternative-actions {
+      padding-top: 20px;
+      border-top: 1px solid #dee2e6;
+    }
+    
+    .skip-btn, .back-btn {
+      display: inline-block;
+      padding: 8px 16px;
+      margin: 0 10px;
+      border: 1px solid #6c757d;
+      border-radius: 4px;
+      color: #6c757d;
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    .skip-btn:hover, .back-btn:hover {
+      background-color: #6c757d;
+      color: white;
+    }
+    
+    .separator {
+      color: #adb5bd;
+      margin: 0 5px;
+    }
+  </style>
+
+<% else %>
+  <div class="alert alert-warning">
+    This floorplan doesn't have an image attached. Please upload an image first.
+  </div>
+  
+  <%= link_to 'Upload New Floorplan', new_floorplan_path, class: 'btn btn-primary' %>
+<% end %> 

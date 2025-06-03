@@ -17,8 +17,8 @@ class FloorplansController < ApplicationController
   end
 
   def create
-    # Extract sketch_after_upload parameter before creating the floorplan model
-    sketch_after_upload = params[:floorplan][:sketch_after_upload] == "1"
+    # Extract generation_type parameter
+    generation_type = params[:floorplan][:generation_type]
     
     @floorplan = Floorplan.new(floorplan_params)
     @floorplan.status = 'pending'
@@ -27,13 +27,20 @@ class FloorplansController < ApplicationController
     @floorplan.user = current_user if logged_in?
 
     if @floorplan.save
-      # Enqueue the worker to process the floorplan asynchronously
-      FloorplanWorker.perform_async(@floorplan.id)
-      
-      # Redirect to sketch page if the checkbox was checked
-      if sketch_after_upload
+      case generation_type
+      when 'immediate'
+        # Enqueue the worker to process the floorplan immediately with standard prompting
+        FloorplanWorker.perform_async(@floorplan.id)
+        redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
+      when 'custom_prompt'
+        # Redirect to custom prompt page
+        redirect_to custom_prompt_floorplan_path(@floorplan), notice: 'Floorplan was successfully uploaded. Add your custom instructions below.'
+      when 'sketch'
+        # Redirect to sketch page (existing functionality)
         redirect_to sketch_floorplan_path(@floorplan), notice: 'Floorplan was successfully uploaded. You can now sketch on it.'
       else
+        # Default to immediate generation
+        FloorplanWorker.perform_async(@floorplan.id)
         redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
       end
     else
@@ -83,10 +90,14 @@ class FloorplansController < ApplicationController
       if sketch_data['sketch_data'].present?
         @floorplan.update(
           sketch_data: sketch_data['sketch_data'],
+          custom_prompt: sketch_data['custom_prompt'],
           status: 'sketch_submitted'
         )
       else
-        @floorplan.update(status: 'sketch_submitted')
+        @floorplan.update(
+          custom_prompt: sketch_data['custom_prompt'],
+          status: 'sketch_submitted'
+        )
       end
       
       # Close and delete the temp file
@@ -110,10 +121,38 @@ class FloorplansController < ApplicationController
     render json: { success: false, message: e.message }, status: :internal_server_error
   end
 
+  def custom_prompt
+    @floorplan = Floorplan.find(params[:id])
+  end
+  
+  def save_custom_prompt
+    @floorplan = Floorplan.find(params[:id])
+    
+    if params[:custom_prompt].present?
+      @floorplan.update(
+        custom_prompt: params[:custom_prompt],
+        status: 'custom_prompt_submitted'
+      )
+      
+      # Enqueue the worker to process the floorplan with custom prompt
+      FloorplanWorker.perform_async(@floorplan.id, false) # false indicates non-sketch generation with custom prompt
+      
+      redirect_to @floorplan, notice: 'Custom instructions saved! Your floorplan is being generated.'
+    else
+      flash.now[:alert] = 'Please provide custom instructions or generate with standard settings.'
+      render :custom_prompt
+    end
+  rescue => e
+    Rails.logger.error("Error saving custom prompt: #{e.message}")
+    Rails.logger.error(e.backtrace.join("\n"))
+    flash.now[:alert] = "Error saving custom prompt: #{e.message}"
+    render :custom_prompt
+  end
+
   private
 
   def floorplan_params
-    # Explicitly exclude sketch_after_upload from parameters passed to the model
+    # Exclude generation_type since it's not a model attribute, just for routing logic
     params.require(:floorplan).permit(:original_image)
   end
 end 
