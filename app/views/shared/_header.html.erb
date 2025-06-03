@@ -1,0 +1,100 @@
+<header class="site-header">
+  <div class="container">
+    <div class="header-content">
+      <%= link_to "FloorPlan Pro", root_path, class: "logo" %>
+      
+      <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation" aria-expanded="false">
+        ☰
+      </button>
+      
+      <nav class="main-nav" id="mainNav">
+        <ul class="nav-links">
+          <li><%= link_to "New Floorplan", new_floorplan_path, class: "nav-link" %></li>
+          <% if logged_in? %>
+            <li><%= link_to "My Floorplans", floorplans_path, class: "nav-link" %></li>
+            <li><%= link_to "Account", account_path, class: "nav-link" %></li>
+            <% unless current_user.subscribed? %>
+              <li>
+                <%= button_to "Upgrade", subscribe_path, method: :post, 
+                    class: "btn btn-primary btn-sm", 
+                    data: { 
+                      confirm: "Ready to upgrade to premium for $9/month?",
+                      disable_with: "Processing..." 
+                    },
+                    form: { style: "display: inline;" } %>
+              </li>
+            <% else %>
+              <li><span class="badge badge-success">✓ Premium</span></li>
+            <% end %>
+          <% else %>
+            <li><%= link_to "Login", login_path, class: "nav-link" %></li>
+            <li><%= link_to "Sign Up", signup_path, class: "nav-link" %></li>
+          <% end %>
+        </ul>
+        
+        <% if logged_in? %>
+          <div class="user-info">
+            <span>Welcome, <%= current_user.email %></span>
+            <%= button_to "Logout", logout_path, method: :delete, class: "btn btn-outline btn-sm" %>
+          </div>
+        <% end %>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<div class="flash-messages">
+  <% if flash[:notice] %>
+    <div class="flash notice">
+      <div class="container"><%= flash[:notice] %></div>
+    </div>
+  <% end %>
+  <% if flash[:alert] %>
+    <div class="flash alert">
+      <div class="container"><%= flash[:alert] %></div>
+    </div>
+  <% end %>
+</div>
+
+<script>
+// Basic mobile navigation functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const mobileNavToggle = document.getElementById('mobileNavToggle');
+  const mainNav = document.getElementById('mainNav');
+  
+  if (mobileNavToggle && mainNav) {
+    mobileNavToggle.addEventListener('click', function() {
+      const isActive = mainNav.classList.contains('active');
+      
+      if (isActive) {
+        mainNav.classList.remove('active');
+        mobileNavToggle.setAttribute('aria-expanded', 'false');
+        mobileNavToggle.innerHTML = '☰';
+      } else {
+        mainNav.classList.add('active');
+        mobileNavToggle.setAttribute('aria-expanded', 'true');
+        mobileNavToggle.innerHTML = '✕';
+      }
+    });
+    
+    // Close mobile nav when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!mainNav.contains(event.target) && !mobileNavToggle.contains(event.target)) {
+        mainNav.classList.remove('active');
+        mobileNavToggle.setAttribute('aria-expanded', 'false');
+        mobileNavToggle.innerHTML = '☰';
+      }
+    });
+    
+    // Close mobile nav when pressing escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && mainNav.classList.contains('active')) {
+        mainNav.classList.remove('active');
+        mobileNavToggle.setAttribute('aria-expanded', 'false');
+        mobileNavToggle.innerHTML = '☰';
+        mobileNavToggle.focus();
+      }
+    });
+  }
+});
+</script> 

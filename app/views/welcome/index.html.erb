@@ -1,67 +1,47 @@
-<div class="welcome-container">
-  <h1>Welcome to the Floorplan Generator</h1>
-  
-  <p>
-    Upload your commercial office floorplan and receive an AI-redesigned layout.
-    Our tool helps you visualize new possibilities for your workspace.
-  </p>
+<% content_for :title, "Welcome to FloorPlan Pro" %>
+<% content_for :description, "Upload your commercial office floorplan and receive an AI-redesigned layout. Visualize new possibilities for your workspace." %>
 
-  <div class="cta-button">
-    <%= link_to "Upload Floorplan", new_floorplan_path, class: "btn btn-primary btn-lg" %>
+<section class="welcome-section">
+  <div class="container">
+    <h1>Welcome to FloorPlan Pro</h1>
+    
+    <p>
+      Upload your commercial office floorplan and receive an AI-redesigned layout.
+      Our tool helps you visualize new possibilities for your workspace.
+    </p>
+
+    <div class="cta-section">
+      <%= link_to "Upload Floorplan", new_floorplan_path, class: "btn btn-primary btn-lg" %>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📐</div>
+        <h3>Simple Upload Process</h3>
+        <p>Just drag and drop your floorplan image, and we'll handle the rest with our advanced AI processing.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>Advanced AI Layout Generation</h3>
+        <p>Our machine learning algorithms analyze your space and generate optimized layouts based on modern design principles.</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Compare Designs</h3>
+        <p>View your original floorplan side-by-side with our AI-generated alternatives to make informed decisions.</p>
+      </div>
+    </div>
   </div>
+</section>
 
-  <div class="features">
-    <h2>Features:</h2>
-    <ul>
-      <li>Simple upload process</li>
-      <li>Advanced layout generation</li>
-      <li>Compare original and generated designs</li>
-    </ul>
+<section class="container">
+  <div class="card">
+    <div class="card-body text-center">
+      <h3>About BPStoresTX</h3>
+      <p>My name is <%= logged_in? ? current_user.email : "Guest" %> and I like football.</p>
+      <p>I live in Texas and I run the LLC BPStoresTX, dedicated to bringing innovative design solutions to businesses across the state.</p>
+    </div>
   </div>
-</div>
-
-<style>
-  .welcome-container {
-    max-width: 800px;
-    margin: 50px auto;
-    padding: 30px;
-    text-align: center;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    border-radius: 8px;
-  }
-  
-  .cta-button {
-    margin: 40px 0;
-  }
-  
-  .btn-primary {
-    background-color: #4285f4;
-    color: white;
-    padding: 15px 30px;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-    display: inline-block;
-  }
-  
-  .features {
-    text-align: left;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-
-  .about-me {
-    max-width: 800px;
-    margin: 50px auto;
-    padding: 30px;
-    text-align: center;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    border-radius: 8px;
-  }
-</style>
-
-<div class="about-me">
-  <h3>About Me</h3>
-  <p>My name is <%= logged_in? ? current_user.email : "Guest" %> and I like football.</p>
-  <p>I live in Texas and I run the LLC BPStoresTX.</p>
-</div> 
+</section> 

@@ -1,0 +1,60 @@
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>FloorPlan Pro</h4>
+        <p>AI-powered floorplan generation for modern workspaces. Transform your office layouts with cutting-edge technology.</p>
+        <p><strong>BPStoresTX LLC</strong><br>
+        Texas, United States</p>
+      </div>
+      
+      <div class="footer-section">
+        <h4>Product</h4>
+        <ul>
+          <li><%= link_to "Create Floorplan", new_floorplan_path %></li>
+          <% if logged_in? %>
+            <li><%= link_to "My Floorplans", floorplans_path %></li>
+            <li><%= link_to "Account Settings", account_path %></li>
+          <% end %>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-section">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="#help">Help Center</a></li>
+          <li><a href="#contact">Contact Us</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#tutorials">Tutorials</a></li>
+          <li><a href="#api">API Documentation</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-section">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#privacy">Privacy Policy</a></li>
+          <li><a href="#terms">Terms of Service</a></li>
+          <li><a href="#cookies">Cookie Policy</a></li>
+          <li><a href="#gdpr">GDPR Compliance</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-section">
+        <h4>Connect</h4>
+        <ul>
+          <li><a href="#" target="_blank" rel="noopener">Twitter</a></li>
+          <li><a href="#" target="_blank" rel="noopener">LinkedIn</a></li>
+          <li><a href="#" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="#" target="_blank" rel="noopener">Blog</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p>&copy; <%= Date.current.year %> BPStoresTX LLC. All rights reserved. | Made with ❤️ in Texas</p>
+    </div>
+  </div>
+</footer> 

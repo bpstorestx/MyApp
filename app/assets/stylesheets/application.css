@@ -7,7 +7,14 @@
  * depending on specificity.
  *
  * Consider organizing styles into separate files for maintainability.
+ *
+ * Import all component and layout stylesheets
  */
+
+@import url('base.css');
+@import url('layout.css'); 
+@import url('components.css');
+@import url('pages.css');
 
 /* Processing indicator styles */
 .processing-status {
