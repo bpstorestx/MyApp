@@ -4,6 +4,12 @@ class SubscriptionsController < ApplicationController
   before_action :require_login, except: [:webhook]
   skip_before_action :verify_authenticity_token, only: [:webhook]
   
+  def show
+    # Redirect GET requests to /subscribe to the floorplan upload page
+    # where users can see subscription options and upgrade
+    redirect_to new_floorplan_path, notice: "Ready to upgrade? You'll find subscription options on this page!"
+  end
+  
   def create
     Rails.logger.info "=== STRIPE SUBSCRIPTION CREATE STARTED ==="
     Rails.logger.info "User: #{current_user.email}"

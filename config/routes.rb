@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   patch 'account/reactivate_subscription', to: 'account#reactivate_subscription', as: 'reactivate_subscription'
   
   # Subscription routes
+  get 'subscribe', to: 'subscriptions#show', as: 'subscribe_page'
   post 'subscribe', to: 'subscriptions#create', as: 'subscribe'
   post 'webhooks/stripe', to: 'subscriptions#webhook'
   

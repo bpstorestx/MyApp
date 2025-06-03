@@ -1,5 +1,105 @@
 <h1>Upload Floorplan</h1>
 
+<% if logged_in? %>
+  <% if current_user.has_unlimited_generations? %>
+    <div class="usage-status premium">
+      <div class="usage-header">
+        <span class="status-icon">✓</span>
+        <span class="status-text">Premium Member - Unlimited Generations</span>
+      </div>
+      <p>You have unlimited access to all floorplan generation features!</p>
+    </div>
+  <% else %>
+    <div class="usage-status free-tier">
+      <div class="usage-header">
+        <span class="status-icon">📊</span>
+        <span class="status-text">Usage This Month</span>
+      </div>
+      
+      <div class="usage-details">
+        <div class="usage-bar-container">
+          <div class="usage-bar">
+            <div class="usage-fill" style="width: <%= current_user.usage_percentage %>%"></div>
+          </div>
+          <span class="usage-text">
+            <%= current_user.image_generations_used %> / <%= User::FREE_TIER_MONTHLY_LIMIT %> generations used
+          </span>
+        </div>
+        
+        <% if current_user.image_generations_remaining > 0 %>
+          <p class="usage-remaining">
+            <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
+              <%= f.submit "Upgrade to Premium For Unlimited Access", 
+                  class: "upgrade-link premium-cta",
+                  data: { 
+                    confirm: "Ready to upgrade to premium for $9/month?",
+                    disable_with: "Processing..." 
+                  } %>
+            <% end %>
+          </p>
+          <% if current_user.image_generations_remaining == 1 %>
+            <p class="upgrade-reminder">
+              This is your last free generation! 
+              <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
+                <%= f.submit "Upgrade to Premium", 
+                    class: "upgrade-link",
+                    data: { 
+                      confirm: "Ready to upgrade to premium for $9/month?",
+                      disable_with: "Processing..." 
+                    } %>
+              <% end %> for unlimited access.
+            </p>
+          <% end %>
+        <% else %>
+          <div class="limit-reached">
+            <p><strong>Monthly limit reached!</strong></p>
+            <p>Upgrade to premium for unlimited floorplan generations.</p>
+            <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
+              <%= f.submit "Upgrade Now ($9/month)", 
+                  class: "btn btn-premium",
+                  data: { 
+                    confirm: "Ready to upgrade to premium for $9/month?",
+                    disable_with: "Processing..." 
+                  } %>
+            <% end %>
+          </div>
+        <% end %>
+        
+        <% if current_user.next_reset_date %>
+          <p class="reset-info">
+            Resets on <%= current_user.next_reset_date.strftime('%B 1, %Y') %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+<% else %>
+  <div class="usage-status guest">
+    <div class="usage-header">
+      <span class="status-icon">📊</span>
+      <span class="status-text">Get 3 Free Generations This Month</span>
+    </div>
+    <div class="guest-usage-info">
+      <div class="usage-preview">
+        <div class="usage-bar">
+          <div class="usage-fill" style="width: 0%"></div>
+        </div>
+        <span class="usage-text">0 / 3 generations used</span>
+      </div>
+      <p>
+        <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
+          <%= f.submit "Upgrade to premium", 
+              class: "upgrade-link",
+              data: { 
+                confirm: "Ready to upgrade to premium for $9/month?",
+                disable_with: "Processing..." 
+              } %>
+        <% end %> for unlimited access!
+      </p>
+    </div>
+  </div>
+<% end %>
+
 <%= form_with(model: @floorplan, local: true, multipart: true) do |form| %>
   <% if @floorplan.errors.any? %>
     <div class="error-messages">
@@ -41,11 +141,194 @@
   </div>
 
   <div class="actions">
-    <%= form.submit "Upload Floorplan" %>
+    <% if logged_in? && !current_user.can_generate_image? %>
+      <div class="form-disabled">
+        <p><strong>Upload disabled - Monthly limit reached</strong></p>
+        <p>You've used all 3 free generations this month.</p>
+        <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
+          <%= f.submit "Upgrade to Premium ($9/month)", 
+              class: "btn btn-premium",
+              data: { 
+                confirm: "Ready to upgrade to premium for $9/month?",
+                disable_with: "Processing..." 
+              } %>
+        <% end %>
+      </div>
+    <% else %>
+      <%= form.submit "Upload Floorplan", class: "upload-btn" %>
+    <% end %>
   </div>
 <% end %>
 
 <style>
+  .usage-status {
+    margin: 20px 0 30px 0;
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  }
+  
+  .usage-status.premium {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #d4edda 0%, #ffffff 100%);
+  }
+  
+  .usage-status.free-tier {
+    border-color: #17a2b8;
+    background: linear-gradient(135deg, #d1ecf1 0%, #ffffff 100%);
+  }
+  
+  .usage-status.guest {
+    border-color: #6f42c1;
+    background: linear-gradient(135deg, #e2d9f3 0%, #ffffff 100%);
+  }
+  
+  .usage-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .status-icon {
+    font-size: 24px;
+    margin-right: 12px;
+  }
+  
+  .status-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #495057;
+  }
+  
+  .usage-details {
+    margin-left: 36px;
+  }
+  
+  .usage-bar-container {
+    margin-bottom: 15px;
+  }
+  
+  .usage-bar {
+    width: 100%;
+    height: 12px;
+    background-color: #e9ecef;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  
+  .usage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745 0%, #20c997 50%, #ffc107 80%, #dc3545 100%);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+  }
+  
+  .usage-text {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+  }
+  
+  .usage-remaining {
+    color: #28a745;
+    margin: 10px 0 5px 0;
+    font-size: 16px;
+  }
+  
+  .upgrade-reminder {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-size: 14px;
+  }
+  
+  .limit-reached {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 10px 0;
+  }
+  
+  .limit-reached p {
+    margin: 5px 0;
+  }
+  
+  .btn-premium {
+    background: linear-gradient(45deg, #6f42c1, #e83e8c);
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 10px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+  }
+  
+  .btn-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+    text-decoration: none;
+    color: white;
+  }
+  
+  .reset-info {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 10px;
+    font-style: italic;
+  }
+  
+  .upgrade-link, .signup-link {
+    color: #0d6efd;
+    text-decoration: none;
+    font-weight: 600;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+  }
+  
+  .upgrade-link:hover, .signup-link:hover {
+    text-decoration: underline;
+  }
+  
+  .premium-cta {
+    display: inline-block;
+    background: linear-gradient(45deg, #6f42c1, #e83e8c);
+    color: white !important;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  
+  .premium-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4);
+    text-decoration: none !important;
+    color: white !important;
+  }
+
   .generation-options {
     margin: 20px 0;
     padding: 20px;
@@ -128,7 +411,20 @@
     margin-top: 30px;
   }
   
-  .actions input[type="submit"] {
+  .form-disabled {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px solid #f5c6cb;
+  }
+  
+  .form-disabled p {
+    margin: 5px 0 15px 0;
+  }
+  
+  .upload-btn, .actions input[type="submit"] {
     background: linear-gradient(45deg, #28a745, #20c997);
     color: white;
     border: none;
@@ -140,9 +436,39 @@
     transition: all 0.3s ease;
   }
   
-  .actions input[type="submit"]:hover {
+  .upload-btn:hover, .actions input[type="submit"]:hover {
     background: linear-gradient(45deg, #218838, #1ea078);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  }
+
+  .guest-usage-info {
+    margin-left: 36px;
+  }
+  
+  .usage-preview {
+    margin-bottom: 15px;
+  }
+  
+  .usage-preview .usage-bar {
+    width: 100%;
+    height: 12px;
+    background-color: #e9ecef;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  
+  .usage-preview .usage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745 0%, #20c997 50%, #ffc107 80%, #dc3545 100%);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+  }
+  
+  .usage-preview .usage-text {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
   }
 </style> 

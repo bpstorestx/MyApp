@@ -17,6 +17,18 @@ class FloorplansController < ApplicationController
   end
 
   def create
+    # Check usage limits for non-premium users
+    unless current_user&.can_generate_image?
+      if logged_in?
+        flash[:alert] = "You've reached your monthly limit of #{User::FREE_TIER_MONTHLY_LIMIT} image generations. Upgrade to premium for unlimited generations!"
+        redirect_to account_path
+      else
+        flash[:alert] = "Please sign up or log in to generate floorplans."
+        redirect_to signup_path
+      end
+      return
+    end
+    
     # Extract generation_type parameter
     generation_type = params[:floorplan][:generation_type]
     
@@ -29,19 +41,31 @@ class FloorplansController < ApplicationController
     if @floorplan.save
       case generation_type
       when 'immediate'
-        # Enqueue the worker to process the floorplan immediately with standard prompting
-        FloorplanWorker.perform_async(@floorplan.id)
-        redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
+        # Increment usage counter and enqueue the worker
+        if current_user&.increment_image_generations!
+          FloorplanWorker.perform_async(@floorplan.id)
+          redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
+        else
+          @floorplan.destroy
+          flash[:alert] = "You've reached your monthly limit. Upgrade to premium for unlimited generations!"
+          redirect_to account_path
+        end
       when 'custom_prompt'
-        # Redirect to custom prompt page
+        # Redirect to custom prompt page (usage will be counted when generation starts)
         redirect_to custom_prompt_floorplan_path(@floorplan), notice: 'Floorplan was successfully uploaded. Add your custom instructions below.'
       when 'sketch'
-        # Redirect to sketch page (existing functionality)
+        # Redirect to sketch page (usage will be counted when generation starts)
         redirect_to sketch_floorplan_path(@floorplan), notice: 'Floorplan was successfully uploaded. You can now sketch on it.'
       else
         # Default to immediate generation
-        FloorplanWorker.perform_async(@floorplan.id)
-        redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
+        if current_user&.increment_image_generations!
+          FloorplanWorker.perform_async(@floorplan.id)
+          redirect_to @floorplan, notice: 'Floorplan was successfully uploaded and is being processed.'
+        else
+          @floorplan.destroy
+          flash[:alert] = "You've reached your monthly limit. Upgrade to premium for unlimited generations!"
+          redirect_to account_path
+        end
       end
     else
       render :new, status: :unprocessable_entity
@@ -64,6 +88,16 @@ class FloorplansController < ApplicationController
   
   def save_sketch
     @floorplan = Floorplan.find(params[:id])
+    
+    # Check usage limits before generating
+    unless current_user&.can_generate_image?
+      render json: { 
+        success: false, 
+        message: "You've reached your monthly limit of #{User::FREE_TIER_MONTHLY_LIMIT} image generations. Upgrade to premium for unlimited generations!",
+        redirect_url: account_path
+      }, status: :forbidden
+      return
+    end
     
     # Parse the JSON request
     sketch_data = JSON.parse(request.body.read)
@@ -104,14 +138,22 @@ class FloorplansController < ApplicationController
       temp_file.close
       temp_file.unlink
       
-      # Re-process the floorplan with the sketch data
-      FloorplanWorker.perform_async(@floorplan.id, true) # true indicates to use sketch data
-      
-      render json: { 
-        success: true, 
-        message: 'Sketch saved successfully',
-        redirect_url: floorplan_path(@floorplan)
-      }
+      # Increment usage counter and process
+      if current_user&.increment_image_generations!
+        FloorplanWorker.perform_async(@floorplan.id, true) # true indicates to use sketch data
+        
+        render json: { 
+          success: true, 
+          message: 'Sketch saved successfully',
+          redirect_url: floorplan_path(@floorplan)
+        }
+      else
+        render json: { 
+          success: false, 
+          message: "You've reached your monthly limit. Upgrade to premium for unlimited generations!",
+          redirect_url: account_path
+        }, status: :forbidden
+      end
     else
       render json: { success: false, message: 'No sketch data received' }, status: :unprocessable_entity
     end
@@ -128,16 +170,27 @@ class FloorplansController < ApplicationController
   def save_custom_prompt
     @floorplan = Floorplan.find(params[:id])
     
+    # Check usage limits before generating
+    unless current_user&.can_generate_image?
+      flash[:alert] = "You've reached your monthly limit of #{User::FREE_TIER_MONTHLY_LIMIT} image generations. Upgrade to premium for unlimited generations!"
+      redirect_to account_path
+      return
+    end
+    
     if params[:custom_prompt].present?
       @floorplan.update(
         custom_prompt: params[:custom_prompt],
         status: 'custom_prompt_submitted'
       )
       
-      # Enqueue the worker to process the floorplan with custom prompt
-      FloorplanWorker.perform_async(@floorplan.id, false) # false indicates non-sketch generation with custom prompt
-      
-      redirect_to @floorplan, notice: 'Custom instructions saved! Your floorplan is being generated.'
+      # Increment usage counter and process
+      if current_user&.increment_image_generations!
+        FloorplanWorker.perform_async(@floorplan.id, false) # false indicates non-sketch generation with custom prompt
+        redirect_to @floorplan, notice: 'Custom instructions saved! Your floorplan is being generated.'
+      else
+        flash[:alert] = "You've reached your monthly limit. Upgrade to premium for unlimited generations!"
+        redirect_to account_path
+      end
     else
       flash.now[:alert] = 'Please provide custom instructions or generate with standard settings.'
       render :custom_prompt
