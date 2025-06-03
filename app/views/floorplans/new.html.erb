@@ -1,476 +1,342 @@
-<h1>Upload Floorplan</h1>
+<% content_for :title, "Upload Floorplan - OfficeFloorplanAI" %>
 
-<% if logged_in? %>
-  <% if current_user.has_unlimited_generations? %>
-    <div class="usage-status premium">
-      <div class="usage-header">
-        <span class="status-icon">✓</span>
-        <span class="status-text">Premium Member - Unlimited Generations</span>
+<div class="min-h-screen bg-gray-50 relative">
+  <!-- Background Pattern -->
+  <div class="absolute inset-0 opacity-5">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.3) 1px, transparent 0); background-size: 50px 50px;"></div>
+  </div>
+  
+  <div class="container-custom py-12 relative z-10">
+    <!-- Enhanced Page Header -->
+    <div class="text-center mb-12">
+      <div class="mb-6 flex justify-center">
+        <span class="inline-block px-6 py-2 bg-blue-100 text-blue-600 rounded-full text-sm font-bold">
+          🚀 AI-Powered Design Generator
+        </span>
       </div>
-      <p>You have unlimited access to all floorplan generation features!</p>
+      <h1 class="text-5xl lg:text-6xl font-black text-gray-900 mb-6 leading-tight text-center">
+        Upgrade Your <span class="text-gradient">Office</span>
+      </h1>
+      <div class="flex justify-center">
+        <p class="text-xl text-gray-600 max-w-3xl leading-relaxed text-center">
+          Transform your office layout with AI-powered design. Upload your floorplan and get professional alternatives in minutes.
+        </p>
+      </div>
     </div>
-  <% else %>
-    <div class="usage-status free-tier">
-      <div class="usage-header">
-        <span class="status-icon">📊</span>
-        <span class="status-text">Usage This Month</span>
-      </div>
-      
-      <div class="usage-details">
-        <div class="usage-bar-container">
-          <div class="usage-bar">
-            <div class="usage-fill" style="width: <%= current_user.usage_percentage %>%"></div>
+
+    <!-- Enhanced Usage Status Section -->
+    <% if logged_in? %>
+      <% if current_user.has_unlimited_generations? %>
+        <!-- Premium Status -->
+        <div class="glass border-2 border-green-200/50 rounded-3xl p-8 mb-12 shadow-2xl hover:shadow-3xl transition-all duration-500">
+          <div class="flex items-center justify-center mb-4">
+            <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mr-4 shadow-xl animate-float">
+              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <h3 class="text-2xl font-black text-green-800">Premium Member - Unlimited Generations</h3>
           </div>
-          <span class="usage-text">
-            <%= current_user.image_generations_used %> / <%= User::FREE_TIER_MONTHLY_LIMIT %> generations used
-          </span>
+          <div class="text-center">
+            <p class="text-green-700 text-lg font-medium">You have unlimited access to all floorplan generation features!</p>
+          </div>
         </div>
-        
-        <% if current_user.image_generations_remaining > 0 %>
-          <p class="usage-remaining">
-            <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
-              <%= f.submit "Upgrade to Premium For Unlimited Access", 
-                  class: "upgrade-link premium-cta",
-                  data: { 
-                    confirm: "Ready to upgrade to premium for $9/month?",
-                    disable_with: "Processing..." 
-                  } %>
-            <% end %>
-          </p>
-          <% if current_user.image_generations_remaining == 1 %>
-            <p class="upgrade-reminder">
-              This is your last free generation! 
-              <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
-                <%= f.submit "Upgrade to Premium", 
-                    class: "upgrade-link",
+      <% else %>
+        <!-- Free Tier Status -->
+        <div class="glass border-2 border-blue-200/50 rounded-3xl p-8 mb-12 shadow-2xl hover:shadow-3xl transition-all duration-500">
+          <div class="flex items-center justify-center mb-6">
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mr-4 shadow-xl animate-float">
+              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 class="text-2xl font-black text-blue-800">Usage This Month</h3>
+          </div>
+          
+          <div class="mb-6">
+            <div class="flex justify-between text-sm text-blue-700 mb-3 font-semibold">
+              <span><%= current_user.image_generations_used %> / <%= User::FREE_TIER_MONTHLY_LIMIT %> generations used</span>
+              <span><%= current_user.usage_percentage %>%</span>
+            </div>
+            <div class="w-full bg-blue-200 rounded-full h-4 shadow-inner">
+              <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-4 rounded-full transition-all duration-500 shadow-lg" 
+                   style="width: <%= current_user.usage_percentage %>%"></div>
+            </div>
+          </div>
+          
+          <% if current_user.image_generations_remaining > 0 %>
+            <div class="text-center">
+              <%= form_with url: subscribe_path, method: :post, local: true, class: "inline-block" do |f| %>
+                <%= f.submit "Upgrade to Premium For Unlimited Access", 
+                    class: "btn-primary px-8 py-4 text-lg font-black animate-pulse-slow shadow-2xl transform hover:scale-110 hover:-rotate-1 transition-all duration-300",
                     data: { 
                       confirm: "Ready to upgrade to premium for $9/month?",
                       disable_with: "Processing..." 
                     } %>
-              <% end %> for unlimited access.
+              <% end %>
+            </div>
+            
+            <% if current_user.image_generations_remaining == 1 %>
+              <div class="mt-6 glass border-2 border-yellow-200 rounded-2xl p-6 shadow-xl">
+                <p class="text-yellow-800 text-center font-semibold">
+                  ⚠️ This is your last free generation! 
+                  <%= form_with url: subscribe_path, method: :post, local: true, class: "inline" do |f| %>
+                    <%= f.submit "Upgrade to Premium", 
+                        class: "text-yellow-600 underline hover:text-yellow-800 bg-transparent border-none p-0 cursor-pointer font-bold",
+                        data: { 
+                          confirm: "Ready to upgrade to premium for $9/month?",
+                          disable_with: "Processing..." 
+                        } %>
+                  <% end %> for unlimited access.
+                </p>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="glass border-2 border-red-200 rounded-2xl p-8 text-center shadow-xl">
+              <h4 class="text-red-800 font-black mb-3 text-xl">🚫 Monthly limit reached!</h4>
+              <p class="text-red-700 mb-6 font-medium">Upgrade to premium for unlimited floorplan generations.</p>
+              <%= form_with url: subscribe_path, method: :post, local: true, class: "inline-block" do |f| %>
+                <%= f.submit "Upgrade Now ($9/month)", 
+                    class: "btn bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 px-8 py-3 font-bold shadow-2xl transform hover:scale-105 transition-all duration-300",
+                    data: { 
+                      confirm: "Ready to upgrade to premium for $9/month?",
+                      disable_with: "Processing..." 
+                    } %>
+              <% end %>
+            </div>
+          <% end %>
+          
+          <% if current_user.next_reset_date %>
+            <p class="text-sm text-blue-600 text-center mt-6 italic font-medium">
+              📅 Resets on <%= current_user.next_reset_date.strftime('%B 1, %Y') %>
             </p>
           <% end %>
-        <% else %>
-          <div class="limit-reached">
-            <p><strong>Monthly limit reached!</strong></p>
-            <p>Upgrade to premium for unlimited floorplan generations.</p>
-            <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
-              <%= f.submit "Upgrade Now ($9/month)", 
-                  class: "btn btn-premium",
-                  data: { 
-                    confirm: "Ready to upgrade to premium for $9/month?",
-                    disable_with: "Processing..." 
-                  } %>
+        </div>
+      <% end %>
+    <% else %>
+      <!-- Guest Status -->
+      <div class="glass border-2 border-purple-200/50 rounded-3xl p-8 mb-12 shadow-2xl hover:shadow-3xl transition-all duration-500">
+        <div class="flex items-center justify-center mb-6">
+          <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mr-4 shadow-xl animate-float">
+            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-2xl font-black text-purple-800">Get 3 Free Generations This Month</h3>
+        </div>
+        
+        <div class="mb-6">
+          <div class="flex justify-between text-sm text-purple-700 mb-3 font-semibold">
+            <span>0 / 3 generations used</span>
+            <span>0%</span>
+          </div>
+          <div class="w-full bg-purple-200 rounded-full h-4 shadow-inner">
+            <div class="bg-gradient-to-r from-purple-500 to-indigo-600 h-4 rounded-full" style="width: 0%"></div>
+          </div>
+        </div>
+        
+        <div class="text-center">
+          <%= form_with url: subscribe_path, method: :post, local: true, class: "inline-block" do |f| %>
+            <%= f.submit "Upgrade to premium", 
+                class: "btn-primary px-8 py-4 text-lg font-black shadow-2xl transform hover:scale-110 hover:-rotate-1 transition-all duration-300",
+                data: { 
+                  confirm: "Ready to upgrade to premium for $9/month?",
+                  disable_with: "Processing..." 
+                } %>
+          <% end %>
+          <span class="text-purple-700 ml-3 font-medium">for unlimited access! ✨</span>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Enhanced Upload Form -->
+    <div class="flex justify-center px-4">
+      <div class="w-full max-w-3xl">
+        <%= form_with(model: @floorplan, local: true, multipart: true, class: "space-y-12") do |form| %>
+          <% if @floorplan.errors.any? %>
+            <div class="glass border-2 border-red-200 rounded-2xl p-6 shadow-xl">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <div class="w-10 h-10 bg-gradient-to-br from-red-400 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <ul class="text-sm text-red-700 font-semibold">
+                    <% @floorplan.errors.each do |error| %>
+                      <% if error.attribute == :original_image %>
+                        <li>⚠️ <%= error.message %></li>
+                        <% break %>
+                      <% end %>
+                    <% end %>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+          <!-- Enhanced File Upload Section -->
+          <div class="card shadow-2xl border-2 border-blue-100 hover:border-blue-200 hover:shadow-3xl transition-all duration-500">
+            <div class="card-body">
+              <div class="text-center mb-8">
+                <div class="flex items-center justify-center mb-4">
+                  <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl animate-float mr-3">
+                    <span class="text-2xl">📁</span>
+                  </div>
+                  <h3 class="text-2xl font-black text-gray-900">Upload Your Floorplan</h3>
+                </div>
+              </div>
+              <div class="space-y-8 text-center">
+                <div>
+                  <%= form.label :original_image, "Original image", class: "form-label text-lg font-semibold text-gray-700 block mb-6" %>
+                </div>
+                <div class="flex justify-center">
+                  <div class="w-full max-w-sm">
+                    <%= form.file_field :original_image, 
+                        accept: 'image/*',
+                        class: "form-input text-lg py-4 hover:shadow-xl transition-all duration-300 w-full text-center cursor-pointer" %>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-gray-500 font-medium flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                    Supported formats: JPG, PNG, GIF • Maximum file size: 10MB
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enhanced Generation Options Section -->
+          <div class="card shadow-2xl border-2 border-green-100 hover:border-green-200 hover:shadow-3xl transition-all duration-500">
+            <div class="card-body">
+              <div class="text-center mb-8">
+                <div class="flex items-center justify-center mb-4">
+                  <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-xl animate-float mr-3" style="animation-delay: 2s;">
+                    <span class="text-2xl">⚙️</span>
+                  </div>
+                  <h3 class="text-2xl font-black text-gray-900">How would you like to generate your floorplan?</h3>
+                </div>
+                <p class="text-gray-600 text-lg">Choose the option that best fits your needs:</p>
+              </div>
+              
+              <div class="space-y-6">
+                <!-- Immediate Generation -->
+                <div class="relative">
+                  <input type="radio" 
+                         id="immediate_generation" 
+                         name="floorplan[generation_type]" 
+                         value="immediate" 
+                         checked
+                         class="sr-only peer">
+                  <label for="immediate_generation" 
+                         class="flex items-start p-6 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-blue-300 hover:shadow-xl peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-xl transition-all duration-300 group">
+                    <div class="flex items-center h-6 mr-4">
+                      <div class="w-6 h-6 bg-white border-2 border-gray-300 rounded-full peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-all duration-200 flex items-center justify-center">
+                        <svg class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">⚡ Generate Immediately</h4>
+                      <p class="text-gray-600 leading-relaxed">Use our standard AI prompt to create a professional office layout right away.</p>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Custom Prompt -->
+                <div class="relative">
+                  <input type="radio" 
+                         id="custom_generation" 
+                         name="floorplan[generation_type]" 
+                         value="custom_prompt"
+                         class="sr-only peer">
+                  <label for="custom_generation" 
+                         class="flex items-start p-6 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-blue-300 hover:shadow-xl peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-xl transition-all duration-300 group">
+                    <div class="flex items-center h-6 mr-4">
+                      <div class="w-6 h-6 bg-white border-2 border-gray-300 rounded-full peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-all duration-200 flex items-center justify-center">
+                        <svg class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">🎯 Add Custom Instructions</h4>
+                      <p class="text-gray-600 leading-relaxed">Provide specific requirements and preferences before generating your floorplan.</p>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Sketch Option -->
+                <div class="relative">
+                  <input type="radio" 
+                         id="sketch_generation" 
+                         name="floorplan[generation_type]" 
+                         value="sketch"
+                         class="sr-only peer">
+                  <label for="sketch_generation" 
+                         class="flex items-start p-6 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-blue-300 hover:shadow-xl peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:shadow-xl transition-all duration-300 group">
+                    <div class="flex items-center h-6 mr-4">
+                      <div class="w-6 h-6 bg-white border-2 border-gray-300 rounded-full peer-checked:border-blue-500 peer-checked:bg-blue-500 transition-all duration-200 flex items-center justify-center">
+                        <svg class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">✏️ Sketch & Customize</h4>
+                      <p class="text-gray-600 leading-relaxed">Draw on your floorplan and add custom instructions for maximum control.</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enhanced Submit Section -->
+          <div class="text-center">
+            <% if logged_in? && !current_user.can_generate_image? %>
+              <div class="glass border-2 border-red-200 rounded-2xl p-8 shadow-xl">
+                <div class="mb-4 text-center">
+                  <div class="w-16 h-16 bg-gradient-to-br from-red-400 to-rose-500 rounded-3xl flex items-center justify-center mx-auto shadow-2xl mb-4">
+                    <span class="text-3xl">🚫</span>
+                  </div>
+                  <h4 class="text-red-800 font-black mb-3 text-2xl">Upload disabled - Monthly limit reached</h4>
+                  <p class="text-red-700 mb-6 text-lg font-medium">You've used all 3 free generations this month.</p>
+                </div>
+                <div class="text-center">
+                  <%= form_with url: subscribe_path, method: :post, local: true, class: "inline-block" do |f| %>
+                    <%= f.submit "Upgrade to Premium ($9/month)", 
+                        class: "btn bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 px-10 py-4 text-xl font-black shadow-2xl transform hover:scale-110 hover:-rotate-1 transition-all duration-300",
+                        data: { 
+                          confirm: "Ready to upgrade to premium for $9/month?",
+                          disable_with: "Processing..." 
+                        } %>
+                  <% end %>
+                </div>
+              </div>
+            <% else %>
+              <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl flex items-center justify-center mx-auto shadow-2xl mb-6 animate-float">
+                  <span class="text-4xl">🚀</span>
+                </div>
+              </div>
+              <div class="text-center">
+                <%= form.submit "Re-Design Your Floorplan", 
+                    class: "btn-primary text-xl font-black px-12 py-5 shadow-2xl transform hover:scale-110 hover:-rotate-1 transition-all duration-300" %>
+                <p class="text-gray-500 mt-4 font-medium">
+                  ✨ Your AI-powered design will be ready in under 2 minutes
+                </p>
+              </div>
             <% end %>
           </div>
         <% end %>
-        
-        <% if current_user.next_reset_date %>
-          <p class="reset-info">
-            Resets on <%= current_user.next_reset_date.strftime('%B 1, %Y') %>
-          </p>
-        <% end %>
       </div>
     </div>
-  <% end %>
-<% else %>
-  <div class="usage-status guest">
-    <div class="usage-header">
-      <span class="status-icon">📊</span>
-      <span class="status-text">Get 3 Free Generations This Month</span>
-    </div>
-    <div class="guest-usage-info">
-      <div class="usage-preview">
-        <div class="usage-bar">
-          <div class="usage-fill" style="width: 0%"></div>
-        </div>
-        <span class="usage-text">0 / 3 generations used</span>
-      </div>
-      <p>
-        <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
-          <%= f.submit "Upgrade to premium", 
-              class: "upgrade-link",
-              data: { 
-                confirm: "Ready to upgrade to premium for $9/month?",
-                disable_with: "Processing..." 
-              } %>
-        <% end %> for unlimited access!
-      </p>
-    </div>
   </div>
-<% end %>
-
-<%= form_with(model: @floorplan, local: true, multipart: true) do |form| %>
-  <% if @floorplan.errors.any? %>
-    <div class="error-messages">
-      <ul>
-        <% @floorplan.errors.each do |error| %>
-          <% if error.attribute == :original_image %>
-            <li><%= error.message %></li>
-            <% break %>
-          <% end %>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <div class="field">
-    <%= form.label :original_image, "Floorplan Image" %>
-    <%= form.file_field :original_image, accept: 'image/*' %>
-  </div>
-
-  <div class="generation-options">
-    <h3>How would you like to generate your floorplan?</h3>
-    <p class="options-help">Choose the option that best fits your needs:</p>
-    
-    <div class="option-group">
-      <%= form.radio_button :generation_type, "immediate", id: "immediate_generation", checked: true %>
-      <%= form.label :generation_type_immediate, "Generate Immediately", class: "option-label" %>
-      <p class="option-description">Use our standard AI prompt to create a professional office layout right away.</p>
-    </div>
-    
-    <div class="option-group">
-      <%= form.radio_button :generation_type, "custom_prompt", id: "custom_generation" %>
-      <%= form.label :generation_type_custom_prompt, "Add Custom Instructions", class: "option-label" %>
-      <p class="option-description">Provide specific requirements and preferences before generating your floorplan.</p>
-    </div>
-    
-    <div class="option-group">
-      <%= form.radio_button :generation_type, "sketch", id: "sketch_generation" %>
-      <%= form.label :generation_type_sketch, "Sketch & Customize", class: "option-label" %>
-      <p class="option-description">Draw on your floorplan and add custom instructions for maximum control.</p>
-    </div>
-  </div>
-
-  <div class="actions">
-    <% if logged_in? && !current_user.can_generate_image? %>
-      <div class="form-disabled">
-        <p><strong>Upload disabled - Monthly limit reached</strong></p>
-        <p>You've used all 3 free generations this month.</p>
-        <%= form_with url: subscribe_path, method: :post, local: true, style: "display: inline;" do |f| %>
-          <%= f.submit "Upgrade to Premium ($9/month)", 
-              class: "btn btn-premium",
-              data: { 
-                confirm: "Ready to upgrade to premium for $9/month?",
-                disable_with: "Processing..." 
-              } %>
-        <% end %>
-      </div>
-    <% else %>
-      <%= form.submit "Re-Design Your Floorplan", class: "upload-btn" %>
-    <% end %>
-  </div>
-<% end %>
-
-<style>
-  .usage-status {
-    margin: 20px 0 30px 0;
-    padding: 20px;
-    border-radius: 12px;
-    border: 2px solid;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  }
-  
-  .usage-status.premium {
-    border-color: #28a745;
-    background: linear-gradient(135deg, #d4edda 0%, #ffffff 100%);
-  }
-  
-  .usage-status.free-tier {
-    border-color: #17a2b8;
-    background: linear-gradient(135deg, #d1ecf1 0%, #ffffff 100%);
-  }
-  
-  .usage-status.guest {
-    border-color: #6f42c1;
-    background: linear-gradient(135deg, #e2d9f3 0%, #ffffff 100%);
-  }
-  
-  .usage-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-  }
-  
-  .status-icon {
-    font-size: 24px;
-    margin-right: 12px;
-  }
-  
-  .status-text {
-    font-size: 18px;
-    font-weight: 600;
-    color: #495057;
-  }
-  
-  .usage-details {
-    margin-left: 36px;
-  }
-  
-  .usage-bar-container {
-    margin-bottom: 15px;
-  }
-  
-  .usage-bar {
-    width: 100%;
-    height: 12px;
-    background-color: #e9ecef;
-    border-radius: 6px;
-    overflow: hidden;
-    margin-bottom: 8px;
-  }
-  
-  .usage-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #28a745 0%, #20c997 50%, #ffc107 80%, #dc3545 100%);
-    border-radius: 6px;
-    transition: width 0.3s ease;
-  }
-  
-  .usage-text {
-    font-size: 14px;
-    color: #6c757d;
-    font-weight: 500;
-  }
-  
-  .usage-remaining {
-    color: #28a745;
-    margin: 10px 0 5px 0;
-    font-size: 16px;
-  }
-  
-  .upgrade-reminder {
-    background-color: #fff3cd;
-    color: #856404;
-    padding: 10px;
-    border-radius: 6px;
-    margin: 10px 0;
-    font-size: 14px;
-  }
-  
-  .limit-reached {
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    margin: 10px 0;
-  }
-  
-  .limit-reached p {
-    margin: 5px 0;
-  }
-  
-  .btn-premium {
-    background: linear-gradient(45deg, #6f42c1, #e83e8c);
-    color: white;
-    padding: 8px 16px;
-    text-decoration: none;
-    border-radius: 6px;
-    font-weight: 600;
-    display: inline-block;
-    margin-top: 10px;
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
-  }
-  
-  .btn-premium:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
-    text-decoration: none;
-    color: white;
-  }
-  
-  .reset-info {
-    font-size: 12px;
-    color: #6c757d;
-    margin-top: 10px;
-    font-style: italic;
-  }
-  
-  .upgrade-link, .signup-link {
-    color: #0d6efd;
-    text-decoration: none;
-    font-weight: 600;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
-  }
-  
-  .upgrade-link:hover, .signup-link:hover {
-    text-decoration: underline;
-  }
-  
-  .premium-cta {
-    display: inline-block;
-    background: linear-gradient(45deg, #6f42c1, #e83e8c);
-    color: white !important;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  
-  .premium-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4);
-    text-decoration: none !important;
-    color: white !important;
-  }
-
-  .generation-options {
-    margin: 20px 0;
-    padding: 20px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-  }
-  
-  .generation-options h3 {
-    margin: 0 0 10px 0;
-    color: #495057;
-    font-size: 18px;
-    font-weight: 600;
-  }
-  
-  .options-help {
-    color: #6c757d;
-    margin: 0 0 20px 0;
-    font-size: 14px;
-  }
-  
-  .option-group {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    background-color: white;
-    transition: all 0.2s ease;
-  }
-  
-  .option-group:hover {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.1);
-  }
-  
-  .option-group input[type="radio"]:checked + .option-label {
-    color: #0d6efd;
-    font-weight: 600;
-  }
-  
-  .option-group input[type="radio"]:checked {
-    accent-color: #0d6efd;
-  }
-  
-  .option-label {
-    display: block;
-    font-size: 16px;
-    font-weight: 500;
-    margin: 5px 0 8px 25px;
-    cursor: pointer;
-  }
-  
-  .option-description {
-    margin: 0 0 0 25px;
-    color: #6c757d;
-    font-size: 14px;
-    line-height: 1.4;
-  }
-  
-  .field {
-    margin-bottom: 20px;
-  }
-  
-  .field label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: #495057;
-  }
-  
-  .field input[type="file"] {
-    padding: 8px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  .actions {
-    margin-top: 30px;
-  }
-  
-  .form-disabled {
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    border: 2px solid #f5c6cb;
-  }
-  
-  .form-disabled p {
-    margin: 5px 0 15px 0;
-  }
-  
-  .upload-btn, .actions input[type="submit"] {
-    background: linear-gradient(45deg, #28a745, #20c997);
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .upload-btn:hover, .actions input[type="submit"]:hover {
-    background: linear-gradient(45deg, #218838, #1ea078);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-  }
-
-  .guest-usage-info {
-    margin-left: 36px;
-  }
-  
-  .usage-preview {
-    margin-bottom: 15px;
-  }
-  
-  .usage-preview .usage-bar {
-    width: 100%;
-    height: 12px;
-    background-color: #e9ecef;
-    border-radius: 6px;
-    overflow: hidden;
-    margin-bottom: 8px;
-  }
-  
-  .usage-preview .usage-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #28a745 0%, #20c997 50%, #ffc107 80%, #dc3545 100%);
-    border-radius: 6px;
-    transition: width 0.3s ease;
-  }
-  
-  .usage-preview .usage-text {
-    font-size: 14px;
-    color: #6c757d;
-    font-weight: 500;
-  }
-</style> 
+</div> 

@@ -1,44 +1,96 @@
-<% content_for :title, "My Floorplans - FloorPlan Pro" %>
+<% content_for :title, "My Floorplans - OfficeFloorplanAI" %>
 
-<div class="page-header">
-  <h1>My Floorplans</h1>
-  <p class="text-muted">Manage and view all your AI-generated floorplan designs.</p>
-</div>
+<div class="bg-white">
+  <div class="container-custom py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">My Floorplans</h1>
+      <p class="text-gray-600">Manage and view all your AI-generated floorplan designs.</p>
+    </div>
 
-<% if @floorplans.empty? %>
-  <div class="empty-state">
-    <div class="empty-state-icon">📐</div>
-    <h3>No floorplans yet</h3>
-    <p>You haven't created any floorplans yet. Upload your first floorplan to get started with AI-powered design generation.</p>
-    <%= link_to "Create Your First Floorplan", new_floorplan_path, class: "btn btn-primary btn-lg" %>
-  </div>
-<% else %>
-  <div class="floorplans-grid">
-    <% @floorplans.each do |floorplan| %>
-      <div class="floorplan-card">
-        <div class="floorplan-image">
-          <% if floorplan.generated_image_url.present? %>
-            <%= image_tag floorplan.generated_image_url, alt: "Generated Layout" %>
-          <% elsif floorplan.original_image.attached? %>
-            <%= image_tag floorplan.original_image.variant(resize_to_limit: [200, 200]), alt: "Original Floorplan" %>
-          <% else %>
-            <div class="placeholder-image">No image available</div>
-          <% end %>
+    <% if @floorplans.empty? %>
+      <!-- Empty State -->
+      <div class="text-center py-12">
+        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div class="text-4xl">📐</div>
         </div>
-        <div class="floorplan-details">
-          <div class="floorplan-status <%= floorplan.status %>">
-            <%= floorplan.status.humanize %>
+        <h3 class="text-2xl font-semibold text-gray-900 mb-4">No floorplans yet</h3>
+        <p class="text-gray-600 mb-8 max-w-md mx-auto">
+          You haven't created any floorplans yet. Upload your first floorplan to get started with AI-powered design generation.
+        </p>
+        <%= link_to "Create Your First Floorplan", new_floorplan_path, 
+            class: "btn-primary px-8 py-3 text-lg" %>
+      </div>
+    <% else %>
+      <!-- Floorplans Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <% @floorplans.each do |floorplan| %>
+          <div class="card hover:shadow-lg transition-shadow duration-200">
+            <!-- Image Section -->
+            <div class="relative h-48 bg-gray-50 rounded-t-lg overflow-hidden">
+              <% if floorplan.generated_image_url.present? %>
+                <%= image_tag floorplan.generated_image_url, 
+                    alt: "Generated Layout", 
+                    class: "w-full h-full object-cover" %>
+                <div class="absolute top-2 left-2">
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Generated
+                  </span>
+                </div>
+              <% elsif floorplan.original_image.attached? %>
+                <%= image_tag floorplan.original_image.variant(resize_to_limit: [400, 300]), 
+                    alt: "Original Floorplan", 
+                    class: "w-full h-full object-cover" %>
+                <div class="absolute top-2 left-2">
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Original
+                  </span>
+                </div>
+              <% else %>
+                <div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500">
+                  <div class="text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p class="mt-1 text-sm">No image available</p>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+
+            <!-- Details Section -->
+            <div class="card-body">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                  <div class="w-2 h-2 rounded-full <%= 
+                    case floorplan.status
+                    when 'completed' then 'bg-green-400'
+                    when 'processing' then 'bg-yellow-400'
+                    when 'failed' then 'bg-red-400'
+                    else 'bg-gray-400'
+                    end %>"></div>
+                  <span class="text-sm font-medium text-gray-700">
+                    <%= floorplan.status.humanize %>
+                  </span>
+                </div>
+              </div>
+              
+              <p class="text-sm text-gray-500 mb-4">
+                Created: <%= floorplan.created_at.strftime("%B %d, %Y") %>
+              </p>
+              
+              <%= link_to "View Details", floorplan_path(floorplan), 
+                  class: "btn-primary w-full text-center" %>
+            </div>
           </div>
-          <p class="floorplan-date">
-            Created: <%= floorplan.created_at.strftime("%B %d, %Y") %>
-          </p>
-          <%= link_to "View Details", floorplan_path(floorplan), class: "view-button" %>
-        </div>
+        <% end %>
       </div>
     <% end %>
-  </div>
-<% end %>
 
-<div class="action-buttons">
-  <%= link_to "Create New Floorplan", new_floorplan_path, class: "btn btn-secondary btn-lg" %>
+    <!-- Action Buttons -->
+    <div class="text-center">
+      <%= link_to "Create New Floorplan", new_floorplan_path, 
+          class: "btn-secondary px-8 py-3 text-lg" %>
+    </div>
+  </div>
 </div> 

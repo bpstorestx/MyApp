@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Reset and base styles */
+@layer base {
+  * {
+    @apply box-border;
+  }
+  
+  html {
+    @apply text-base;
+    font-size: 16px;
+  }
+  
+  body {
+    @apply font-sans antialiased m-0 p-0;
+    line-height: 1.6;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+    letter-spacing: -0.025em;
+  }
+  
+  h1 { @apply text-4xl lg:text-6xl leading-tight }
+  h2 { @apply text-3xl lg:text-4xl leading-tight }
+  h3 { @apply text-2xl lg:text-3xl leading-snug }
+  h4 { @apply text-xl lg:text-2xl leading-snug }
+  
+  /* Form element base styles */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="file"],
+  textarea,
+  select {
+    @apply border-2 border-gray-200 rounded-xl px-4 py-3 text-base transition-all duration-200;
+    @apply focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:outline-none;
+    @apply shadow-sm hover:shadow-md;
+  }
+  
+  input[type="file"] {
+    @apply border-2 border-dashed border-gray-300 bg-gray-50 p-6 rounded-xl;
+    @apply hover:border-blue-400 hover:bg-blue-50 transition-all duration-200;
+  }
+  
+  input[type="radio"] {
+    @apply w-5 h-5;
+  }
+  
+  /* Prevent weird font sizing */
+  button, input, optgroup, select, textarea {
+    font-family: inherit;
+    font-size: 100%;
+    line-height: 1.15;
+    margin: 0;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3 text-base font-semibold rounded-xl;
+    @apply transition-all duration-200 transform hover:scale-105 active:scale-95;
+    @apply focus:outline-none focus:ring-4 focus:ring-offset-2;
+    @apply shadow-lg hover:shadow-xl;
+    letter-spacing: 0.025em;
+  }
+  
+  .btn-primary {
+    @apply btn text-white;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    @apply hover:from-blue-600 hover:to-blue-800;
+    @apply focus:ring-blue-500/50;
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3), 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .btn-primary:hover {
+    box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4), 0 8px 15px rgba(0, 0, 0, 0.15);
+  }
+  
+  .btn-secondary {
+    @apply btn text-white;
+    background: linear-gradient(135deg, #6b7280 0%, #374151 100%);
+    @apply hover:from-gray-600 hover:to-gray-700;
+    @apply focus:ring-gray-500/50;
+    box-shadow: 0 10px 25px rgba(107, 114, 128, 0.3), 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .btn-outline {
+    @apply btn border-2 border-gray-300 text-gray-700 bg-white;
+    @apply hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50;
+    @apply focus:ring-blue-500/50;
+  }
+  
+  .card {
+    @apply bg-white rounded-2xl border border-gray-200/60;
+    @apply shadow-xl hover:shadow-2xl transition-all duration-300;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    backdrop-filter: blur(10px);
+  }
+  
+  .card:hover {
+    transform: translateY(-2px);
+  }
+  
+  .card-header {
+    @apply px-8 py-6 border-b border-gray-100;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    @apply rounded-t-2xl;
+  }
+  
+  .card-body {
+    @apply px-8 py-6;
+  }
+  
+  .form-input {
+    @apply block w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-base;
+    @apply focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 focus:outline-none;
+    @apply shadow-sm hover:shadow-md transition-all duration-200;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  }
+  
+  .form-label {
+    @apply block text-base font-semibold text-gray-800 mb-3;
+    letter-spacing: 0.025em;
+  }
+  
+  .container-custom {
+    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12;
+  }
+  
+  /* Enhanced status badges */
+  .status-badge {
+    @apply inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold;
+    @apply shadow-md;
+  }
+  
+  .status-badge.success {
+    @apply bg-gradient-to-r from-emerald-500 to-green-600 text-white;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+  
+  .status-badge.warning {
+    @apply bg-gradient-to-r from-amber-500 to-orange-600 text-white;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+  
+  .status-badge.error {
+    @apply bg-gradient-to-r from-red-500 to-rose-600 text-white;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  }
+  
+  .status-badge.info {
+    @apply bg-gradient-to-r from-blue-500 to-indigo-600 text-white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  }
+  
+  /* Premium gradient backgrounds */
+  .gradient-bg-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .gradient-bg-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  }
+  
+  .gradient-bg-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  }
+  
+  /* Enhanced animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  /* Glass morphism effect */
+  .glass {
+    backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(209, 213, 219, 0.3);
+  }
+  
+  /* Enhanced text gradients */
+  .text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Better focus states */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500;
+  }
+} 

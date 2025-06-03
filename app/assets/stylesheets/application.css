@@ -8,15 +8,12 @@
  *
  * Consider organizing styles into separate files for maintainability.
  *
- * Import all component and layout stylesheets
+ * Import Tailwind CSS and custom styles
  */
 
-@import url('base.css');
-@import url('layout.css'); 
-@import url('components.css');
-@import url('pages.css');
+@import url('application.tailwind.css');
 
-/* Processing indicator styles */
+/* Processing indicator styles - keeping these for canvas functionality */
 .processing-status {
   padding: 20px;
   text-align: center;
