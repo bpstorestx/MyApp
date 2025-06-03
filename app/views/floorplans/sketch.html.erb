@@ -93,6 +93,13 @@
     <textarea id="custom-prompt" placeholder="Example: I need 4 private offices, a large conference room, and an open workspace area. The conference room should be located near the entrance..." rows="4"></textarea>
   </div>
   
+  <div class="zoom-guidance">
+    <div class="guidance-box">
+      <h4>📐 For Best Results:</h4>
+      <p><strong>Center your floorplan</strong> with white space around it before generating. Use <strong>"Reset Zoom"</strong> if needed!</p>
+    </div>
+  </div>
+  
   <div class="generate-section">
     <button id="save-btn" class="generate-btn">🏗️ Generate My Floorplan!</button>
     <p class="generate-help">Ready to see your floorplan? Click above to send your sketch to our AI Architect!</p>
@@ -365,6 +372,30 @@
       margin: 15px 0 0 0;
       font-size: 16px;
       text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    .zoom-guidance {
+      margin: 20px 0 15px 0;
+    }
+    
+    .guidance-box {
+      padding: 15px;
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .guidance-box h4 {
+      margin: 0 0 8px 0;
+      color: #856404;
+      font-size: 16px;
+    }
+    
+    .guidance-box p {
+      margin: 0;
+      color: #856404;
+      font-size: 14px;
     }
   </style>
 
@@ -1272,17 +1303,22 @@
         
         // Handle existing tool functionality first
         if (currentMode === 'text' && !opt.target) {
-          startTextEditing(opt.pointer);
+          // Use properly transformed coordinates for text placement
+          const pointer = canvas.getPointer(opt.e);
+          startTextEditing(pointer);
           return;
         } else if (currentMode === 'labels' && !opt.target) {
-          placeLabelAtPosition(opt.pointer);
+          // Use properly transformed coordinates for label placement
+          const pointer = canvas.getPointer(opt.e);
+          placeLabelAtPosition(pointer);
           return;
         } else if (currentMode === 'line') {
           console.log('Mouse down in line mode, isDrawingLine:', isDrawingLine);
           // Handle line drawing...
           if (!isDrawingLine) {
             isDrawingLine = true;
-            startPoint = opt.pointer;
+            // Use properly transformed coordinates for consistency
+            startPoint = canvas.getPointer(opt.e);
             
             let currentColor = '#FF0000';
             
@@ -1327,8 +1363,7 @@
         // Handle existing cursor functionality
         const customCursor = document.getElementById('custom-cursor');
         if (customCursor) {
-          const pointer = opt.pointer;
-          
+          // For custom cursor (eraser), use screen coordinates
           if (customCursor.style.display === 'block') {
             const mouseEvent = opt.e;
             customCursor.style.left = mouseEvent.clientX + 'px';
@@ -1337,6 +1372,8 @@
           
           // Update line preview if we're drawing a line
           if (currentMode === 'line' && isDrawingLine && lineObject && startPoint) {
+            // Get properly transformed coordinates for canvas objects
+            const pointer = canvas.getPointer(opt.e);
             console.log('Updating line preview to:', pointer.x, pointer.y);
             lineObject.set({
               x2: pointer.x,
