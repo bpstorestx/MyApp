@@ -1,13 +1,16 @@
 <h1>Sketch on Your Floorplan</h1>
 
-<% if @floorplan.original_image.attached? %>
-  <!-- Original image is loaded as the canvas background, but not modified -->
+<% image_to_use = @use_generated && @floorplan.generated_image.attached? ? @floorplan.generated_image : @floorplan.original_image %>
+<% image_type = @use_generated && @floorplan.generated_image.attached? ? "generated" : "original" %>
+
+<% if image_to_use.attached? %>
+  <!-- Image is loaded as the canvas background, but not modified -->
   <div class="sketch-info alert alert-info">
-    <p>You are sketching on a copy of your original floorplan. The original will remain unchanged.</p>
+    <p>You are sketching on a copy of your <%= image_type %> floorplan. The <%= image_type %> will remain unchanged.</p>
   </div>
   
   <!-- Hidden <img> for background loading -->
-  <img id="original-img" src="<%= url_for(@floorplan.original_image) %>" style="display: none;" />
+  <img id="original-img" src="<%= url_for(image_to_use) %>" style="display: none;" />
 
   <!-- Fabric canvas for drawing -->
   <div class="canvas-container">

@@ -54,6 +54,7 @@ gem "sentry-rails"
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
+gem "mini_magick"
 
 # AWS SDK for S3 storage
 gem "aws-sdk-s3", require: false
@@ -75,6 +76,9 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+  
+  # Mock Redis for development without a Redis server
+  gem "mock_redis"
 end
 
 group :test do

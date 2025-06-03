@@ -52,6 +52,7 @@ class FloorplansController < ApplicationController
   
   def sketch
     @floorplan = Floorplan.find(params[:id])
+    @use_generated = params[:use_generated] == 'true'
   end
   
   def save_sketch

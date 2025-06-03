@@ -25,4 +25,17 @@ if ENV['REDIS_URL'].to_s.start_with?('rediss://')
   end
   
   Rails.logger.info("Redis SSL configuration enabled for URL: #{ENV['REDIS_URL'].to_s.gsub(/:[^:@]+@/, ':***@')}")
+end
+
+# Configure Redis with mock for development
+if Rails.env.development? && defined?(MockRedis)
+  # Check if Redis is available
+  begin
+    redis = Redis.new
+    redis.ping
+    Rails.logger.info "Connected to Redis server"
+  rescue Redis::CannotConnectError
+    Rails.logger.warn "Redis server not available, using MockRedis instead"
+    Redis::Connection.drivers.unshift(MockRedis::Driver)
+  end
 end 
