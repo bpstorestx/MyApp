@@ -22,9 +22,6 @@
   <div class="tool-panel">
     <div class="color-options">
       <button id="red-color" class="color-btn active" data-color="#FF0000"></button>
-      <button id="green-color" class="color-btn" data-color="#00FF00"></button>
-      <button id="blue-color" class="color-btn" data-color="#0000FF"></button>
-      <label>Custom: <input type="color" id="color-picker" value="#FF0000"></label>
     </div>
     
     <button id="pen-tool" class="tool-btn active">Pen</button>
@@ -88,8 +85,8 @@
       <ul class="examples-list">
         <li>"Focus on tangible layout design. Open vs closed. Specific numbers. Listing Exact Rooms Required."</li>
         <li>"I need 6 private offices along the perimeter, a large conference room, and an open workspace in the center."</li>
-        <li>"Place two private offices near the entrance, cluster four workstations in a loose grid in the middle, and situate a small meeting room and kitchenette in the back corner."</li>
-        <li>"A mostly open layout with six desks in the center, two enclosed offices along the window wall, a single conference room adjacent to the reception area, and a break area at the far end."</li>
+        <li>"A mostly open layout with desks in the center, two enclosed offices along the top wall, a single conference room adjacent to the reception area, and a break area at the far end."</li>
+        <li>"If sketching in red, explain your custom sketch edits in the prompt for added accuracy."</li>
       </ul>
     </div>
     
@@ -240,14 +237,6 @@
     
     #red-color {
       background-color: #FF0000;
-    }
-    
-    #green-color {
-      background-color: #00FF00;
-    }
-    
-    #blue-color {
-      background-color: #0000FF;
     }
     
     .zoom-controls {
@@ -457,7 +446,6 @@
       const undoBtn = document.getElementById('undo-btn');
       const clearBtn = document.getElementById('clear-btn');
       const saveBtn = document.getElementById('save-btn');
-      const colorPicker = document.getElementById('color-picker');
       const sizeSlider = document.getElementById('size-slider');
       const sizeValue = document.getElementById('size-value');
       const handTool = document.getElementById('hand-tool');
@@ -477,11 +465,6 @@
       const zoomOutBtn = document.getElementById('zoom-out-btn');
       const zoomResetBtn = document.getElementById('zoom-reset-btn');
       const zoomLevel = document.getElementById('zoom-level');
-      
-      // Color buttons
-      const redColorBtn = document.getElementById('red-color');
-      const greenColorBtn = document.getElementById('green-color');
-      const blueColorBtn = document.getElementById('blue-color');
       
       // Track objects for undo functionality
       const objectHistory = [];
@@ -676,168 +659,6 @@
         }
       });
       
-      // Helper function to set active color button
-      function setActiveColorButton(button) {
-        const colorButtons = document.querySelectorAll('.color-btn');
-        colorButtons.forEach(btn => {
-          btn.classList.remove('active');
-        });
-        button.classList.add('active');
-        
-        // Also update the color picker to match
-        if (colorPicker) {
-          colorPicker.value = button.dataset.color;
-        }
-      }
-      
-      // Color buttons click handlers
-      if (redColorBtn) {
-        redColorBtn.addEventListener('click', () => {
-          const color = '#FF0000';
-          setActiveColorButton(redColorBtn);
-          applySelectedColor(color);
-        });
-      }
-      
-      if (greenColorBtn) {
-        greenColorBtn.addEventListener('click', () => {
-          const color = '#00FF00';
-          setActiveColorButton(greenColorBtn);
-          applySelectedColor(color);
-        });
-      }
-      
-      if (blueColorBtn) {
-        blueColorBtn.addEventListener('click', () => {
-          const color = '#0000FF';
-          setActiveColorButton(blueColorBtn);
-          applySelectedColor(color);
-        });
-      }
-      
-      // Color picker
-      if (colorPicker) {
-        colorPicker.addEventListener('input', () => {
-          applySelectedColor(colorPicker.value);
-          
-          // Remove active class from all color buttons when custom color is selected
-          const colorButtons = document.querySelectorAll('.color-btn');
-          colorButtons.forEach(btn => {
-            btn.classList.remove('active');
-          });
-        });
-      }
-      
-      // Zoom button handlers
-      if (zoomInBtn) {
-        zoomInBtn.addEventListener('click', () => {
-          setZoom(currentZoom + zoomStep);
-        });
-      }
-      
-      if (zoomOutBtn) {
-        zoomOutBtn.addEventListener('click', () => {
-          setZoom(currentZoom - zoomStep);
-        });
-      }
-      
-      if (zoomResetBtn) {
-        zoomResetBtn.addEventListener('click', () => {
-          setZoom(1.0);
-          // Reset pan position to center
-          canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-          canvas.renderAll();
-        });
-      }
-      
-      // Initialize zoom level display
-      updateZoomLevel();
-      
-      // Function to apply selected color
-      function applySelectedColor(color) {
-        if (currentMode === 'eraser') {
-          // Don't change eraser color
-          return;
-        }
-        
-        // Apply color to selected object if in select mode with an active object
-        const activeObject = canvas.getActiveObject();
-        if (currentMode === 'select' && activeObject) {
-          if (activeObject.type === 'text') {
-            activeObject.set('fill', color);
-          } else {
-            activeObject.set('stroke', color);
-          }
-          canvas.renderAll();
-        } else if (isEditing && currentTextObject) {
-          // Apply to current editing text
-          currentTextObject.set('fill', color);
-          canvas.renderAll();
-        } else {
-          canvas.freeDrawingBrush.color = color;
-        }
-        
-        console.log('Color changed to: ' + color);
-      }
-      
-      // Size slider - only affects pen and eraser
-      if (sizeSlider && sizeValue) {
-        sizeSlider.addEventListener('input', () => {
-          const size = parseInt(sizeSlider.value);
-          
-          // Calculate adjusted size based on the tool and size
-          let adjustedSize = size;
-          
-          if (currentMode === 'eraser') {
-            // Apply eraser-specific size adjustments
-            if (size >= 2 && size <= 6) {
-              adjustedSize = size * 1.3; // 30% larger for sizes 2-6
-            } else if (size >= 7 && size <= 9) {
-              adjustedSize = size * 1.4; // 40% larger for sizes 7-9
-            } else if (size === 10) {
-              adjustedSize = size * 3.0; // 200% larger for size 10
-            }
-          } else if (size >= 8) {
-            // For pen tool, keep the original 50% increase for 8-10
-            adjustedSize = size * 1.5;
-          }
-          
-          // Apply to drawing brush
-          canvas.freeDrawingBrush.width = adjustedSize;
-          
-          // Update cursor size if in eraser mode
-          if (currentMode === 'eraser') {
-            updateCursorSize();
-          }
-          
-          sizeValue.textContent = size;
-          console.log('Brush size changed to: ' + size + ' (adjusted: ' + adjustedSize + ')');
-        });
-      }
-      
-      // Font size selector - only affects text
-      const fontSizeSelect = document.getElementById('font-size-select');
-      if (fontSizeSelect) {
-        fontSizeSelect.addEventListener('change', () => {
-          const fontSize = parseInt(fontSizeSelect.value);
-          
-          // Apply to currently editing text
-          if (isEditing && currentTextObject) {
-            currentTextObject.set('fontSize', fontSize);
-            canvas.renderAll();
-            console.log('Font size changed to: ' + fontSize);
-          }
-          
-          // Apply to selected text object if in select mode
-          const activeObject = canvas.getActiveObject();
-          if (currentMode === 'select' && activeObject && activeObject.type === 'text') {
-            activeObject.set('fontSize', fontSize);
-            canvas.renderAll();
-            console.log('Font size changed to: ' + fontSize);
-          }
-        });
-      }
-      
       // Track added objects for undo
       canvas.on('object:added', function(e) {
         // Skip adding the cursor/editing text to undo history
@@ -874,7 +695,7 @@
         const textObj = new fabric.Text('|', {
           left: pointer.x,
           top: pointer.y,
-          fill: colorPicker ? colorPicker.value : '#000000',
+          fill: '#FF0000',
           fontSize: document.getElementById('font-size-select') ? 
             parseInt(document.getElementById('font-size-select').value) : 23,
           selectable: true,
@@ -917,7 +738,7 @@
         const labelObj = new fabric.Text(labelText, {
           left: pointer.x,
           top: pointer.y,
-          fill: colorPicker ? colorPicker.value : '#000000',
+          fill: '#FF0000',
           fontSize: 15, // Small font size for labels
           selectable: true,
           editable: false, // Labels are not editable
@@ -1103,7 +924,7 @@
             obj.selectable = false;
           });
           
-          canvas.freeDrawingBrush.color = colorPicker ? colorPicker.value : '#000000';
+          canvas.freeDrawingBrush.color = '#FF0000';
           setActiveButton(penTool);
           showToolControls('pen');
           console.log('Pen tool selected');
@@ -1463,7 +1284,7 @@
             isDrawingLine = true;
             startPoint = opt.pointer;
             
-            let currentColor = colorPicker ? colorPicker.value : '#FF0000';
+            let currentColor = '#FF0000';
             
             lineObject = new fabric.Line(
               [startPoint.x, startPoint.y, startPoint.x, startPoint.y], 
@@ -1539,6 +1360,114 @@
       canvas.on('mouse:up', function(opt) {
         isPanning = false;
         canvas.selection = currentMode === 'select';
+      });
+      
+      // Zoom button handlers
+      if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', () => {
+          setZoom(currentZoom + zoomStep);
+        });
+      }
+      
+      if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', () => {
+          setZoom(currentZoom - zoomStep);
+        });
+      }
+      
+      if (zoomResetBtn) {
+        zoomResetBtn.addEventListener('click', () => {
+          setZoom(1.0);
+          // Reset pan position to center
+          canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+          canvas.renderAll();
+        });
+      }
+      
+      // Initialize zoom level display
+      updateZoomLevel();
+      
+      // Size slider - only affects pen and eraser
+      if (sizeSlider && sizeValue) {
+        sizeSlider.addEventListener('input', () => {
+          const size = parseInt(sizeSlider.value);
+          
+          // Calculate adjusted size based on the tool and size
+          let adjustedSize = size;
+          
+          if (currentMode === 'eraser') {
+            // Apply eraser-specific size adjustments
+            if (size >= 2 && size <= 6) {
+              adjustedSize = size * 1.3; // 30% larger for sizes 2-6
+            } else if (size >= 7 && size <= 9) {
+              adjustedSize = size * 1.4; // 40% larger for sizes 7-9
+            } else if (size === 10) {
+              adjustedSize = size * 3.0; // 200% larger for size 10
+            }
+          } else if (size >= 8) {
+            // For pen tool, keep the original 50% increase for 8-10
+            adjustedSize = size * 1.5;
+          }
+          
+          // Apply to drawing brush
+          canvas.freeDrawingBrush.width = adjustedSize;
+          
+          // Update cursor size if in eraser mode
+          if (currentMode === 'eraser') {
+            updateCursorSize();
+          }
+          
+          sizeValue.textContent = size;
+          console.log('Brush size changed to: ' + size + ' (adjusted: ' + adjustedSize + ')');
+        });
+      }
+      
+      // Font size selector - only affects text
+      const fontSizeSelect = document.getElementById('font-size-select');
+      if (fontSizeSelect) {
+        fontSizeSelect.addEventListener('change', () => {
+          const fontSize = parseInt(fontSizeSelect.value);
+          
+          // Apply to currently editing text
+          if (isEditing && currentTextObject) {
+            currentTextObject.set('fontSize', fontSize);
+            canvas.renderAll();
+            console.log('Font size changed to: ' + fontSize);
+          }
+          
+          // Apply to selected text object if in select mode
+          const activeObject = canvas.getActiveObject();
+          if (currentMode === 'select' && activeObject && activeObject.type === 'text') {
+            activeObject.set('fontSize', fontSize);
+            canvas.renderAll();
+            console.log('Font size changed to: ' + fontSize);
+          }
+        });
+      }
+      
+      // Track added objects for undo
+      canvas.on('object:added', function(e) {
+        // Skip adding the cursor/editing text to undo history
+        // We'll add the final text when committed
+        if (isEditing && e.target === currentTextObject) {
+          console.log('Skipping text being edited for undo history');
+          return;
+        }
+        
+        // Skip tracking text with cursor
+        if (e.target && e.target.type === 'text' && e.target.text && e.target.text.includes('|')) {
+          console.log('Skipping text with cursor for undo history');
+          return;
+        }
+        
+        // Add object to history
+        console.log('Adding to undo history:', e.target.type);
+        objectHistory.push(e.target);
+        
+        // Enable the undo button
+        if (undoBtn) {
+          undoBtn.disabled = false;
+        }
       });
     }
   </script>
