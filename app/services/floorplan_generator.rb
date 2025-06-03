@@ -74,7 +74,7 @@ class FloorplanGenerator
     if resized_file
       post_body << "--#{boundary}\r\n"
       post_body << "Content-Disposition: form-data; name=\"image\"; filename=\"#{@floorplan.original_image.filename}\"\r\n"
-      post_body << "Content-Type: #{@floorplan.original_image.content_type}\r\n\r\n"
+      post_body << "Content-Type: image/png\r\n\r\n"
       post_body << resized_file.read
       post_body << "\r\n"
       

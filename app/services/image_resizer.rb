@@ -1,15 +1,18 @@
 class ImageResizer
   def self.resize(image, max_dimension = 1024)
-    tempfile = Tempfile.create(['resized', File.extname(image.filename.to_s)], binmode: true)
+    # Create a temporary file with .png extension
+    tempfile = Tempfile.new(['resized_', '.png'])
+    tempfile.binmode
     
     begin
       image.open do |file|
         # Use MiniMagick to resize the image
         mini_image = MiniMagick::Image.read(file)
         
-        # Get original dimensions
+        # Get original dimensions and format
         original_width = mini_image[:width]
         original_height = mini_image[:height]
+        original_format = mini_image[:format]
         
         # Calculate new dimensions while maintaining aspect ratio
         if original_width > original_height
@@ -22,14 +25,20 @@ class ImageResizer
           new_width = (original_width.to_f / original_height * max_dimension).round
         end
         
-        # Log the resize operation
-        Rails.logger.info("Resizing image from #{original_width}x#{original_height} to #{new_width}x#{new_height} (maintaining aspect ratio)")
+        # Log the conversion details
+        Rails.logger.info("Converting #{original_format} image from #{original_width}x#{original_height} to PNG #{new_width}x#{new_height}")
         
+        # Resize the image
         mini_image.resize "#{new_width}x#{new_height}"
+        
+        # Convert to PNG and write to file
+        mini_image.format 'png'
         mini_image.write tempfile.path
+        
+        # Rewind the file for reading
+        tempfile.rewind
       end
       
-      tempfile.rewind
       return tempfile
     rescue => e
       Rails.logger.error("Error resizing image: #{e.message}")
